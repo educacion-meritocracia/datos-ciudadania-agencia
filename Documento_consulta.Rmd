@@ -1,0 +1,103 @@
+---
+title: "Documento de consulta: Estudio Agencia de la Educación"
+author: "Juan Carlos Castillo, Daniel Miranda & José Conejeros"
+date: '`r format(Sys.time(), "%d/%m/%Y")`'
+output: 
+  html_document:
+    theme: cosmo
+    highlight: tango
+    code_folding: hide
+    toc: yes
+    toc_float: true
+runtime: shiny
+---
+<style>
+    body .main-container {
+        max-width: 1500px;
+    }
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#Desactivar notación científica    
+options(scipen=999)
+#Paquetes
+library(knitr)
+library(rmdformats)
+library(DT)
+library(dplyr)
+library(haven)
+library(texreg) 
+library(xtable) 
+library(kableExtra) 
+library(ggplot2)
+library(shiny)
+```
+
+A modo de complemento se presentan dos apps de consulta con las temáticas del estudio de la agencia. 
+
+# Consulta Base de Datos estudio : 
+
+Se pueden aplicar filtros con las temáticas relevantes y la disponibilidad para alumnos, padres o ambos.
+
+```{r Base variables, eval=TRUE}
+#Tabla con las variables del estudio
+tabla1 <- read_dta("bbdd/variables_alumnos.dta")
+tabla1 <- data.frame(tabla1)
+tabla1 <- tabla1 %>% dplyr::select(identificador_ambos, bbdd_alumnos, bbdd_padres, categoria, descripcion, atributos, observacion)
+colnames(tabla1) <- c("Identificador", "BBDD Alumnos", "DBBDD Padres", "Temática", "Descripción", "Atributos", "Observación")
+tabla1 <- tabla1[order(tabla1$Temática),]
+#Aplicación
+shinyApp(
+ui <- fluidPage(
+  titlePanel("Variables del estudio"),
+  # Create a new Row in the UI for selectInputs
+  fluidRow(
+    column(4,
+        selectInput("Identificador",
+                    "Entrevistados:",
+                    c("Seleccionar",
+                      unique(as.character(tabla1$Identificador))))
+    ),
+    column(4,
+        selectInput("Temática",
+                    "Temática del cuestionario:",
+                    c("Seleccionar",
+                      unique(as.character(tabla1$Temática))))
+    )
+  ),
+  # Create a new row for the table.
+  DT::dataTableOutput("tabla")
+),
+
+server <- function(input, output) {
+  # Filter data based on selections
+  output$tabla <- DT::renderDataTable(DT::datatable({
+    data <- tabla1
+    if (input$Identificador != "Seleccionar") {
+      data <- data[data$Identificador == input$Identificador,]
+    }
+    if (input$Temática != "Seleccionar") {
+      data <- data[data$Temática == input$Temática,]
+    }
+    data
+  },
+    rownames = FALSE,
+    extensions = 'Buttons',
+    options = list(dom = 'Bftlip', 
+    height=1000,
+    pageLength=50,
+    buttons =  list(I('colvis'), c('copy', 'csv', 'excel', 'pdf')),
+    searchHighlight = TRUE,
+    initComplete = JS(
+    "function(settings, json) {",
+    "$(this.api().table().header()).css({'background-color': '#000', 'color': '#fff'});",
+    "}"),
+    language = list(url = '//cdn.datatables.net/plug-ins/1.10.11/i18n/Spanish.json')
+    )))
+})
+```
+
+
+
+

@@ -1,0 +1,448 @@
+---
+title: "Estudio Datos Agencia de la Educación: Reporte"
+author: "Juan Carlos Castillo, Daniel Miranda & José Conejeros"
+date: '`r format(Sys.time(), "%d/%m/%Y")`'
+output:
+  rmdformats::readthedown:
+    css: color.css
+    highlight: tango
+    code_folding: hide
+    self_contained: true
+    thumbnails: false
+    lightbox: false
+---
+
+A continuación se presenta un breve reporte técnico con las pricipales variables disponibles en las bases otorgadas por la agencia de la educación. Este documento se divide en cuatro secciones: procesamiento de datos, descripción de las principales variables del estudio, variables que se replican para padres e hijos y análisis correlacional para ambos grupos. 
+
+```{r opciones globales, warning=FALSE, cache=FALSE, include=FALSE, results="asis"}
+rm(list = ls()) #limpiar la memoria
+#Desactivar notación científica
+options(scipen=999)
+#Paquetes
+library(knitr)
+library(rmdformats)
+library(DT)
+library(dplyr)
+library(haven)
+library(texreg) 
+library(xtable) 
+library(kableExtra) 
+library(ggplot2)
+library(shiny)
+library(psych)
+library(PerformanceAnalytics)
+library(purrr)
+library(tidyr)
+
+#Global
+options(max.print = "500")
+opts_chunk$set(echo = FALSE,
+	             cache = FALSE,
+               prompt = FALSE,       
+               tidy = FALSE,
+               comment = NA,
+               message = FALSE,
+               warning = FALSE)
+opts_knit$set(width = 500)
+```
+
+# Procesamiento de datos
+
+## Lecturas de Bases de Datos
+
+A pesar de que la unión de las tres bases de datos arroja una base general `bbdd` con **10.213** observaciones, se debe considerar que hay **3.443** casos en las que no tenemos información para alguna de las tres bases de datos que fueron unidas. Por el momento solo se etiquetan las variables utilizadas en la sección de [Variables Espejo: vínculo entre padres e hijos]
+
+```{r bbdd, echo=TRUE, eval=TRUE}
+#BBDD
+bbdd_alumnos <- read_dta("bbdd/alumnosFc_mrun.dta")
+bbdd_hijos <- read_dta("bbdd/cuestAlumnos.dta")
+bbdd_padres <- read_dta("bbdd/cuestPadres.dta")
+
+#Merge: mantiene todas las observaciones
+bbdd <- merge(bbdd_alumnos, bbdd_hijos, by=c("idalumno"), all=TRUE)
+bbdd <- merge(bbdd, bbdd_padres, by=c("idalumno"), all=TRUE)
+#Guardar:
+save(bbdd, file = "bbdd/alumnos_padres.RData")
+
+#Tabla con las variables del estudio
+variables <- data.frame(read_dta("bbdd/variables_alumnos.dta"))
+```
+
+# Variables del estudio
+
+## Principales variables
+
+A continuación se presentan las principales variables del estudio categorizadas en las siguientes temáticas:
+
+```{r base temas, echo=TRUE, eval=TRUE}
+#BBDD con los temas de los cuestionarios
+temas <- data.frame(read_dta("bbdd/temas.dta"))
+colnames(temas) <- c("Identificador", "Temática", "Observación")
+temas <- temas[order(temas$Temática),]
+datatable(temas, rownames=FALSE, filter="top", options=list(pageLength=20, scro11X=TRUE), style="default", class="compact")
+```
+
+**Para revisar las variables se recomienda ingresar el nombre de la categoría. También se puede recurrir a la aplicación de consulta rápida [aquí](https://panelciudadania.shinyapps.io/Documento_consulta/)**
+
+## Variables desde los cuestionarios
+
+La tabla a continuación presenta una revisión más detallada para cada variable en el estudio. 
+
+```{r base variables, echo=TRUE, eval=TRUE}
+#Base de datos 
+variables <- variables %>% dplyr::select(identificador_ambos, bbdd_alumnos, bbdd_padres, categoria, descripcion, atributos, observacion)
+colnames(variables) <- c("Identificador", "BBDD Alumnos", "DBBDD Padres", "Temática", "Descripción", "Atributos", "Observación")
+variables <- variables[order(variables$Temática),]
+datatable(variables, rownames=FALSE, filter="top", options=list(pageLength=10, scro11X=TRUE), style="default", class="compact")
+```
+
+# Variables Espejo: vínculo entre padres e hijos
+
+A continuación se presenta un análisis correlacional exploratorio con las principales variables de estudio que se replican integramente para padres e hijos. Cabe mencionar que varias de las variables se asumen como continuas solo con fines descriptivos, a su vez, solo se etiquetan las variables principales. 
+
+## Interés político y Participación
+
++ Interés político (1:Nada, 2:Poco, 3:Bastante, 4:Mucho)	
++ Participación (1:No, nunca he hecho esto, 2: Sí, dentro de los últimos tres años, 3: Sí, dentro de los últimos doce meses)
+
+```{r interes pol, echo=TRUE, eval=TRUE}
+#Objeto con las variables de interés:
+#Participación e interés político
+polit <- bbdd %>% dplyr::select(alp16, pap17,
+alp17_1, pap13_1,
+alp17_2, pap13_2,
+alp17_3, pap13_3,
+alp17_4, pap13_4,
+alp17_5, pap13_5,
+alp17_6, pap13_6,
+alp17_7, pap13_7,
+alp17_8, pap13_8,
+alp17_9, pap13_9,
+alp17_10, pap13_10)
+#Recodificamos missing
+polit[polit == "1"] <- 1
+polit[polit == "2"] <- 2
+polit[polit == "3"] <- 3
+polit[polit == "4"] <- 4
+polit[polit == "99"] <- NA
+polit[polit == "0"] <- NA
+#Etiqueta para cada variable
+Hmisc::label(polit$alp16) <- "Interes Político (Hijos)"
+Hmisc::label(polit$pap17) <- "Interes Político (Padres)"
+Hmisc::label(polit$alp17_1) <- "Firmar una petición (Hijos)"
+Hmisc::label(polit$pap13_1) <- "Firmar una petición (Padres)"
+Hmisc::label(polit$alp17_2) <- "Asistir a una marcha (Hijos)"
+Hmisc::label(polit$pap13_2) <- "Asistir a una marcha (Padres)"
+Hmisc::label(polit$alp17_3) <- "Donar dinero para una act. pol. (Hijos)"
+Hmisc::label(polit$pap13_3) <- "Donar dinero para una act. pol. (Padres)"
+Hmisc::label(polit$alp17_4) <- "Figurar en los medios (Hijos)"
+Hmisc::label(polit$pap13_4) <- "Figurar en los medios (Padres)"
+Hmisc::label(polit$alp17_5) <- "Participar en una huelga (Hijos)"
+Hmisc::label(polit$pap13_5) <- "Participar en una huelga (Padres)"
+Hmisc::label(polit$alp17_6) <- "Trabajar en una campaña electoral (Hijos)"
+Hmisc::label(polit$pap13_6) <- "Trabajar en una campaña electoral (Padres)"
+Hmisc::label(polit$alp17_7) <- "RRSS para expresar opinión (Hijos)"
+Hmisc::label(polit$pap13_7) <- "RRSS para expresar opinión  (Padres)"
+Hmisc::label(polit$alp17_8) <- "Convencer a otros por un partido/candidato (Hijos)"
+Hmisc::label(polit$pap13_8) <- "Convencer a otros por un partido/candidato (Padres)"
+Hmisc::label(polit$alp17_9) <- "Toma de recintos (Hijos)"
+Hmisc::label(polit$pap13_9) <- "Toma de recintos (Padres)"
+Hmisc::label(polit$alp17_10) <- "Bloqueo de calles o carreteras (Hijos)"
+Hmisc::label(polit$pap13_10) <- "Bloqueo de calles o carreteras (Padres)"
+
+names(polit)[1]<- "Interes Político(Hijos)"
+names(polit)[2]<- "Interes Político(Padres)"
+names(polit)[3]<- "Firmar una petición(Hijos)"
+names(polit)[4]<- "Firmar una petición(Padres)"
+names(polit)[5]<- "Asistir a una marcha(Hijos)"
+names(polit)[6]<- "Asistir a una marcha(Padres)"
+names(polit)[7]<- "Donar para una act. pol.(Hijos)"
+names(polit)[8]<- "Donar para una act. pol.(Padres)"
+names(polit)[9]<- "Figurar en los medios(Hijos)"
+names(polit)[10]<- "Figurar en los medios(Padres)"
+names(polit)[11]<- "Participar en una huelga(Hijos)"
+names(polit)[12]<- "Participar en una huelga(Padres)"
+names(polit)[13]<- "Trabajar en una campaña(Hijos)"
+names(polit)[14]<- "Trabajar en una campaña(Padres)"
+names(polit)[15]<- "Usar RRSS para opinar(Hijos)"
+names(polit)[16]<- "Usar RRSS para opinar(Padres)"
+names(polit)[17]<- "Convencer a otros: partido(Hijos)"
+names(polit)[18]<- "Convencer a otros: partido(Padres)"
+names(polit)[19]<- "Toma de recintos(Hijos)"
+names(polit)[20]<- "Toma de recintos(Padres)"
+names(polit)[21]<- "Bloqueo de calles/carreteras(Hijos)"
+names(polit)[22]<- "Bloqueo de calles/carreteras(Padres)"
+
+#Descriptivos
+#Hmisc::describe(polit)
+
+#Mapa de Histogramas
+#polit %>%
+#  keep(is.numeric) %>% 
+#  gather() %>% 
+#  ggplot(aes(value)) +
+#    facet_wrap(~ key, scales = "free") +
+#    geom_histogram(binwidth=1,colour="white") 
+
+#Correlaciones padre e hijo
+pairs.panels(polit[1:2], hist.col="gray", digit=2, stars = TRUE)
+pairs.panels(polit[3:6], hist.col="gray", digit=2, stars = TRUE)
+pairs.panels(polit[7:10], hist.col="gray", digit=2, stars = TRUE)
+pairs.panels(polit[11:14], hist.col="gray", digit=2, stars = TRUE)
+pairs.panels(polit[15:18], hist.col="gray", digit=2, stars = TRUE)
+pairs.panels(polit[19:22], hist.col="gray", digit=2, stars = TRUE)
+```
+
+## Percepción sobre la democracia
+
++ Nivel de acuerdo (1:Muy en desacuerdo, 2:En desacuerdo, 3:De acuerdo, 4:Muy de acuerdo)
+
+```{r democracia, echo=TRUE, eval=TRUE}
+#Percepción sobre la democracia
+democracia <- bbdd %>% dplyr::select(alp28_1, pap19_1,
+alp28_2, pap19_4,
+alp28_3, pap19_2,
+alp28_4, pap19_5,
+alp28_5, pap19_3,
+alp28_6, pap19_6,
+alp28_7, pap19_7)
+#Recodificamos missing
+democracia[democracia == "1"] <- 1
+democracia[democracia == "2"] <- 2
+democracia[democracia == "3"] <- 3
+democracia[democracia == "4"] <- 4
+democracia[democracia == "99"] <- NA
+democracia[democracia == "0"] <- NA
+#Nombre variables
+names(democracia)[1]<- "Democracia mejor forma de gobierno(Hijos)"
+names(democracia)[2]<- "Democracia mejor forma de gobierno(Padres)"
+names(democracia)[3]<- "Dictaduras se justifican por beneficios económicos(Hijos)"
+names(democracia)[4]<- "Dictaduras se justifican por beneficios económicos(Padres)"
+names(democracia)[5]<- "Garantizar la libertad de expresión(Hijos)"
+names(democracia)[6]<- "Garantizar la libertad de expresión(Padres)"
+names(democracia)[7]<- "Concentración del poder en una sola persona(Hijos)"
+names(democracia)[8]<- "Concentración del poder en una sola persona(Padres)"
+names(democracia)[9]<- "Democracias fomentan igualdad entre las personas(Hijos)"
+names(democracia)[10]<- "Democracias fomentan igualdad entre las personas(Padres)"
+names(democracia)[11]<- "Gob.cerrar los medios de comunicación que lo critiquen(Hijos)"
+names(democracia)[12]<- "Gob.cerrar los medios de comunicación que lo critiquen(Padres)"
+names(democracia)[13]<- "Presidente no está de acuerdo con el Congreso debería disolverlo(Hijos)"
+names(democracia)[14]<- "Presidente no está de acuerdo con el Congreso debería disolverlo(Padres)"
+
+#Correlaciones padre e hijo
+pairs.panels(democracia[1:2], hist.col="gray", digit=2, stars = TRUE)
+pairs.panels(democracia[3:4], hist.col="gray", digit=2, stars = TRUE)
+pairs.panels(democracia[5:6], hist.col="gray", digit=2, stars = TRUE)
+pairs.panels(democracia[7:8], hist.col="gray", digit=2, stars = TRUE)
+pairs.panels(democracia[9:10], hist.col="gray", digit=2, stars = TRUE)
+pairs.panels(democracia[11:12], hist.col="gray", digit=2, stars = TRUE)
+pairs.panels(democracia[13:14], hist.col="gray", digit=2, stars = TRUE)
+```
+
+## Definición Buen ciudadano
+
++ Nivel de importancia (1:Sin ninguna importancia, 2: No muy importante, 3: Importante, 4:Muy importante)
+
+```{r ciudadano, echo=TRUE, eval=TRUE}
+#Definición Buen ciudadano
+buen_ciudadano<- bbdd %>% dplyr::select(alp36_1, pap18_1,
+alp36_2, pap18_2,
+alp36_3, pap18_3,
+alp36_4, pap18_4,
+alp36_5, pap18_5,
+alp36_6, pap18_6,
+alp36_7, pap18_7,
+alp36_8, pap18_8,
+alp36_9, pap18_9,
+alp36_10, pap18_10,
+alp36_11, pap18_11,
+alp36_12, pap18_12,
+alp36_13, pap18_13,
+alp36_14, pap18_14,
+alp36_15, pap18_15,
+alp36_16, pap18_16,
+alp36_17, pap18_17)
+#Recodificamos missing
+buen_ciudadano[buen_ciudadano == "1"] <- 1
+buen_ciudadano[buen_ciudadano == "2"] <- 2
+buen_ciudadano[buen_ciudadano == "3"] <- 3
+buen_ciudadano[buen_ciudadano == "4"] <- 4
+buen_ciudadano[buen_ciudadano == "99"] <- NA
+buen_ciudadano[buen_ciudadano  == "0"] <- NA
+
+#Nombre variables
+names(buen_ciudadano)[1]<- "Votar en todas las elecciones(Hijos)"
+names(buen_ciudadano)[2]<- "Votar en todas las elecciones(Padres)"
+names(buen_ciudadano)[3]<- "Unirse a un partido político(Hijos)"
+names(buen_ciudadano)[4]<- "Unirse a un partido político(Padres)"
+names(buen_ciudadano)[5]<- "Aprender de la historia del país(Hijos)"
+names(buen_ciudadano)[6]<- "Aprender de la historia del país(Padres)"
+names(buen_ciudadano)[7]<- "Estar informado sobre temas políticos(Hijos)"
+names(buen_ciudadano)[8]<- "Estar informado sobre temas políticos(Padres)"
+names(buen_ciudadano)[9]<- "Respeto por los representantes del Estado(Hijos)"
+names(buen_ciudadano)[10]<- "Respeto por los representantes del Estado(Padres)"
+names(buen_ciudadano)[11]<- "Involucrarse en discusiones políticas(Hijos)"
+names(buen_ciudadano)[12]<- "Involucrarse en discusiones políticas(Padres)"
+names(buen_ciudadano)[13]<- "Participar en protestas pacíficas(Hijos)"
+names(buen_ciudadano)[14]<- "Participar en protestas pacíficas(Padres)"
+names(buen_ciudadano)[15]<- "Participar en actividades para beneficiar a la comunidad(Hijos)"
+names(buen_ciudadano)[16]<- "Participar en actividades para beneficiar a la comunidad(Padres)"
+names(buen_ciudadano)[17]<- "Participar en promover derechos humanos(Hijos)"
+names(buen_ciudadano)[18]<- "Participar en promover derechos humanos(Padres)"
+names(buen_ciudadano)[19]<- "Participar en la protección del medio ambiente(Hijos)"
+names(buen_ciudadano)[20]<- "Participar en la protección del medio ambiente(Padres)"
+names(buen_ciudadano)[21]<- "Trabajar arduamente(Hijos)"
+names(buen_ciudadano)[22]<- "Trabajar arduamente(Padres)"
+names(buen_ciudadano)[23]<- "Obedecer siempre la ley(Hijos)"
+names(buen_ciudadano)[24]<- "Obedecer siempre la ley(Padres)"
+names(buen_ciudadano)[25]<- "Asegurar el bienestar económico de sus familias(Hijos)"
+names(buen_ciudadano)[26]<- "Asegurar el bienestar económico de sus familias(Padres)"
+names(buen_ciudadano)[27]<- "Hacer esfuerzos por proteger recursos naturales(Hijos)"
+names(buen_ciudadano)[28]<- "Hacer esfuerzos por proteger recursos naturales(Padres)"
+names(buen_ciudadano)[29]<- "Respetar a los otros a tener sus propias opiniones(Hijos)"
+names(buen_ciudadano)[30]<- "Respetar a los otros a tener sus propias opiniones(Padres)"
+names(buen_ciudadano)[31]<- "Apoyar a quienes están peor que uno(Hijos)"
+names(buen_ciudadano)[32]<- "Apoyar a quienes están peor que uno(Padres)"
+names(buen_ciudadano)[33]<- "Involucrarse en ayudar a países menos desarrollados(Hijos)"
+names(buen_ciudadano)[34]<- "Involucrarse en ayudar a países menos desarrollados(Padres)"
+
+#Correlaciones padre e hijo
+pairs.panels(buen_ciudadano[1:2], hist.col="gray", digit=2, stars = TRUE)
+pairs.panels(buen_ciudadano[3:6], hist.col="gray", digit=2, stars = TRUE)
+pairs.panels(buen_ciudadano[7:10], hist.col="gray", digit=2, stars = TRUE)
+pairs.panels(buen_ciudadano[11:14], hist.col="gray", digit=2, stars = TRUE)
+pairs.panels(buen_ciudadano[15:18], hist.col="gray", digit=2, stars = TRUE)
+pairs.panels(buen_ciudadano[19:22], hist.col="gray", digit=2, stars = TRUE)
+pairs.panels(buen_ciudadano[23:26], hist.col="gray", digit=2, stars = TRUE)
+pairs.panels(buen_ciudadano[27:30], hist.col="gray", digit=2, stars = TRUE)
+pairs.panels(buen_ciudadano[31:34], hist.col="gray", digit=2, stars = TRUE)
+
+```
+
+## Confianza en las instituciones
+
++ Nivel de confianza (1:Nada o muy poco, 2:Algo, 3:Bastante, 4:Mucho)
+
+```{r confianza, echo=TRUE, eval=TRUE}
+#Confianza en las instituciones
+confianza <- bbdd %>% dplyr::select(alp27_1, pap21_1,
+alp27_2, pap21_2,
+alp27_3, pap21_3,
+alp27_4, pap21_4,
+alp27_5, pap21_5,
+alp27_6, pap21_6,
+alp27_7, pap21_7,
+alp27_8, pap21_8,
+alp27_9, pap21_9,
+alp27_10, pap21_10,
+alp27_11, pap21_11,
+alp27_12, pap21_12,
+alp27_13, pap21_13)
+#Recodificamos missing
+confianza[confianza == "1"] <- 1
+confianza[confianza == "2"] <- 2
+confianza[confianza == "3"] <- 3
+confianza[confianza == "4"] <- 4
+confianza[confianza == "99"] <- NA
+confianza[confianza  == "0"] <- NA
+#Nombre variables
+names(confianza)[1]<- "Congreso Nacional (Hijos)"
+names(confianza)[2]<- "Congreso Nacional (Padres)"
+names(confianza)[3]<- "Tribunales de Justicia (Hijos)"
+names(confianza)[4]<- "Tribunales de Justicia (Padres)"
+names(confianza)[5]<- "Gobierno (Hijos)"
+names(confianza)[6]<- "Gobierno (Padres)"
+names(confianza)[7]<- "Partidos políticos (Hijos)"
+names(confianza)[8]<- "Partidos políticos (Padres)"
+names(confianza)[9]<- "Bancos (Hijos)"
+names(confianza)[10]<- "Bancos (Padres)"
+names(confianza)[11]<- "Empresas privadas (Hijos)"
+names(confianza)[12]<- "Empresas privadas (Padres)"
+names(confianza)[13]<- "Carabineros (Hijos)"
+names(confianza)[14]<- "Carabineros (Padres)"
+names(confianza)[15]<- "Fuerzas Armadas (Hijos)"
+names(confianza)[16]<- "Fuerzas Armadas (Padres)"
+names(confianza)[17]<- "Sindicatos (Hijos)"
+names(confianza)[18]<- "Sindicatos (Padres)"
+names(confianza)[19]<- "Radios (Hijos)"
+names(confianza)[20]<- "Radios (Padres)"
+names(confianza)[21]<- "Televisión (Hijos)"
+names(confianza)[22]<- "Televisión (Padres)"
+names(confianza)[23]<- "Diarios (Hijos)"
+names(confianza)[24]<- "Diarios (Padres)"
+names(confianza)[25]<- "RRSS (Hijos)"
+names(confianza)[26]<- "RRSS (Padres)"
+
+#Correlaciones padre e hijo
+pairs.panels(confianza[1:2], hist.col="gray", digit=2, stars = TRUE)
+pairs.panels(confianza[3:6], hist.col="gray", digit=2, stars = TRUE)
+pairs.panels(confianza[7:10], hist.col="gray", digit=2, stars = TRUE)
+pairs.panels(confianza[11:14], hist.col="gray", digit=2, stars = TRUE)
+pairs.panels(confianza[15:18], hist.col="gray", digit=2, stars = TRUE)
+pairs.panels(confianza[19:22], hist.col="gray", digit=2, stars = TRUE)
+pairs.panels(confianza[23:26], hist.col="gray", digit=2, stars = TRUE)
+```
+
+## Percepción de Desigualdad
+
++ Nivel de acuerdo (1:Muy en desacuerdo, 2:En desacuerdo, 3:De acuerdo, 4:Muy de acuerdo)
+
+```{r desigualdad, echo=TRUE, eval=TRUE}
+#Percepciones sobre Desigualdad
+desigualdad <- bbdd %>% dplyr::select(alp38_1, pap25_1,
+alp38_2, pap25_2,
+alp38_3, pap25_3,
+alp38_4, pap25_4,
+alp38_5, pap25_5,
+alp39_1, pap26_1,
+alp39_2, pap26_2,
+alp39_3, pap26_3,
+alp39_4, pap26_4)
+#Recodificamos missing
+desigualdad[desigualdad == "1"] <- 1
+desigualdad[desigualdad == "2"] <- 2
+desigualdad[desigualdad == "3"] <- 3
+desigualdad[desigualdad == "4"] <- 4
+desigualdad[desigualdad == "99"] <- NA
+desigualdad[desigualdad  == "0"] <- NA
+#Nombre variables
+names(desigualdad)[1]<- "Hay igualdad de oportunidades(Hijos)"
+names(desigualdad)[2]<- "Hay igualdad de oportunidades(Padres)"
+names(desigualdad)[3]<- "Recompensadas por sus esfuerzos(Hijos)"
+names(desigualdad)[4]<- "Recompensadas por sus esfuerzos(Padres)"
+names(desigualdad)[5]<- "Obtienen lo que merecen(Hijos)"
+names(desigualdad)[6]<- "Obtienen lo que merecen(Padres)"
+names(desigualdad)[7]<- "Recompensadas por su inteligencia(Hijos)"
+names(desigualdad)[8]<- "Recompensadas por su inteligencia(Padres)"
+names(desigualdad)[9]<- "Diferencias de ingreso son demasiado grandes(Hijos)"
+names(desigualdad)[10]<- "Diferencias de ingreso son demasiado grandes(Padres)"
+names(desigualdad)[11]<- "Es justo mayores ingresos, mejores pensiones(Hijos)"
+names(desigualdad)[12]<- "Es justo mayores ingresos, mejores pensiones(Padres)"
+names(desigualdad)[13]<- "Es justo pagar por mejor educación(Hijos)"
+names(desigualdad)[14]<- "Es justo pagar por mejor educación(Padres)"
+names(desigualdad)[15]<- "Es justo mayores ingresos, mejor salud(Hijos)"
+names(desigualdad)[16]<- "Es justo mayores ingresos, mejor salud(Padres)"
+names(desigualdad)[17]<- "Gobierno debería reducir las diferencias de ingreso(Hijos)"
+names(desigualdad)[18]<- "Gobierno debería reducir las diferencias de ingreso(Padres)"
+
+#Correlaciones padre e hijo
+pairs.panels(desigualdad[1:2], hist.col="gray", digit=2, stars = TRUE)
+pairs.panels(desigualdad[3:4], hist.col="gray", digit=2, stars = TRUE)
+pairs.panels(desigualdad[5:6], hist.col="gray", digit=2, stars = TRUE)
+pairs.panels(desigualdad[7:8], hist.col="gray", digit=2, stars = TRUE)
+pairs.panels(desigualdad[9:10], hist.col="gray", digit=2, stars = TRUE)
+pairs.panels(desigualdad[11:12], hist.col="gray", digit=2, stars = TRUE)
+pairs.panels(desigualdad[13:14], hist.col="gray", digit=2, stars = TRUE)
+pairs.panels(desigualdad[15:16], hist.col="gray", digit=2, stars = TRUE)
+pairs.panels(desigualdad[17:18], hist.col="gray", digit=2, stars = TRUE)
+
+#Etiquetas de las variables
+#etiquetas <- data.frame(read_dta("bbdd/etiquetas.dta"))
+#names(desigualdad) <- etiquetas$descripcion[match(names(desigualdad),etiquetas$bbdd)]
+
+```
+
+
+
+
+
