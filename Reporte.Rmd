@@ -442,6 +442,45 @@ pairs.panels(desigualdad[17:18], hist.col="gray", digit=2, stars = TRUE)
 
 ```
 
+## Perpceciones sobre paz y violencia
+
++ Nivel de acuerdo (1:Muy en desacuerdo, 2:En desacuerdo, 3:De acuerdo, 4:Muy de acuerdo)
+
+```{r paz, echo=TRUE, eval=TRUE}
+#Percepciones sobre Desigualdad
+paz<- bbdd %>% dplyr::select(alp40_1, pap28_1,
+alp40_2, pap28_2,
+alp40_3, pap28_3,
+alp40_4, pap28_4)
+#Recodificamos missing
+paz[paz == "1"] <- 1
+paz[paz == "2"] <- 2
+paz[paz == "3"] <- 3
+paz[paz == "4"] <- 4
+paz[paz == "99"] <- NA
+paz[paz  == "0"] <- NA
+#Nombre variables
+names(paz)[1]<- "Paz a través del diálogo(Hijo)"
+names(paz)[2]<- "Paz a través del diálogo(Padres)"
+names(paz)[3]<- "Para la paz el fin justifica los medios(Hijo)"
+names(paz)[4]<- "Para la paz el fin justifica los medios(Padres)"
+names(paz)[5]<- "Ciudadanos castigan criminales(Hijos)"
+names(paz)[6]<- "Ciudadanos castigan criminales(Padres)"
+names(paz)[7]<- "Violencia para lograr metas(Hijos)"
+names(paz)[8]<- "Violencia para lograr metas(Padres)"
+
+#Correlaciones padre e hijo
+pairs.panels(paz[1:2], hist.col="gray", digit=2, stars = TRUE)
+pairs.panels(paz[3:4], hist.col="gray", digit=2, stars = TRUE)
+pairs.panels(paz[5:6], hist.col="gray", digit=2, stars = TRUE)
+pairs.panels(paz[7:8], hist.col="gray", digit=2, stars = TRUE)
+
+#Etiquetas de las variables
+#etiquetas <- data.frame(read_dta("bbdd/etiquetas.dta"))
+#names(desigualdad) <- etiquetas$descripcion[match(names(desigualdad),etiquetas$bbdd)]
+
+```
+
 
 
 
