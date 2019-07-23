@@ -470,10 +470,8 @@ names(paz)[7]<- "Violencia para lograr metas(Hijos)"
 names(paz)[8]<- "Violencia para lograr metas(Padres)"
 
 #Correlaciones padre e hijo
-pairs.panels(paz[1:2], hist.col="gray", digit=2, stars = TRUE)
-pairs.panels(paz[3:4], hist.col="gray", digit=2, stars = TRUE)
-pairs.panels(paz[5:6], hist.col="gray", digit=2, stars = TRUE)
-pairs.panels(paz[7:8], hist.col="gray", digit=2, stars = TRUE)
+pairs.panels(paz[1:4], hist.col="gray", digit=2, stars = TRUE)
+pairs.panels(paz[5:8], hist.col="gray", digit=2, stars = TRUE)
 
 #Etiquetas de las variables
 #etiquetas <- data.frame(read_dta("bbdd/etiquetas.dta"))
