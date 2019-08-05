@@ -14,7 +14,7 @@ output:
 
 A continuación se presenta un breve reporte técnico con las pricipales variables disponibles en las bases otorgadas por la agencia de la educación. Este documento se divide en cuatro secciones: procesamiento de datos, descripción de las principales variables del estudio, variables que se replican para padres e hijos y análisis correlacional para ambos grupos. 
 
-```{r opciones globales, warning=FALSE, cache=FALSE, include=FALSE, results="asis"}
+```{r opciones globales, warning=FALSE, cache=FALSE, include=FALSE, results="asis", echo=TRUE}
 rm(list = ls()) #limpiar la memoria
 #Desactivar notación científica
 options(scipen=999)

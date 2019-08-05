@@ -1,6 +1,6 @@
 # Ciudadania-Agencia
 
-Estudio ciudadanía agencia educacion. 
+Estudio ciudadanía según datos de la agencia de la educacion. 
 
 Hasta la fecha se genera un reporte en HTML con la siguiente información 'repote': 
 
