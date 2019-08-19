@@ -33,6 +33,8 @@ library(psych)
 library(PerformanceAnalytics)
 library(purrr)
 library(tidyr)
+library(vcd)
+library(vcdExtra)
 
 #Global
 options(max.print = "500")
@@ -46,45 +48,36 @@ opts_chunk$set(echo = FALSE,
 opts_knit$set(width = 500)
 ```
 
-# Procesamiento de datos
+# Bases de datos
 
-## Lecturas de Bases de Datos
+## Información disponible
+
+La base de datos generados por la agencia de la educación son tres: 
+
+1. Base de datos con los resultados de la prueba de conocimiento cívico (`bbdd_alumnos`) con un total de **10.213** observaciones.
+2. Base de datos con el cuestionario para estudiantes (`bbdd_alumnos`) con un total de **8589** observaciones.  
+3. Base de datos con el cuestionario para padres (`bbdd_alumnos`) con un total de **6770** observaciones.
+
+Se realiza un merge dejando todas las observaciones (`bbdd`). Dada las diferencias entre bases de datos se oberva un importante número de casos pérdidos 
 
 A pesar de que la unión de las tres bases de datos arroja una base general `bbdd` con **10.213** observaciones, se debe considerar que hay **3.443** casos en las que no tenemos información para alguna de las tres bases de datos que fueron unidas. Por el momento solo se etiquetan las variables utilizadas en la sección de [Variables Espejo: vínculo entre padres e hijos]
 
 ```{r bbdd, echo=TRUE, eval=TRUE}
 #BBDD
-bbdd_alumnos <- read_dta("bbdd/alumnosFc_mrun.dta")
-bbdd_hijos <- read_dta("bbdd/cuestAlumnos.dta")
+bbdd_puntajes <- read_dta("bbdd/alumnosFc_mrun.dta")
+bbdd_alumnos <- read_dta("bbdd/cuestAlumnos.dta")
 bbdd_padres <- read_dta("bbdd/cuestPadres.dta")
-
 #Merge: mantiene todas las observaciones
-bbdd <- merge(bbdd_alumnos, bbdd_hijos, by=c("idalumno"), all=TRUE)
-bbdd <- merge(bbdd, bbdd_padres, by=c("idalumno"), all=TRUE)
-#Guardar:
+bbdd <- merge(bbdd_puntajes, bbdd_alumnos, by="idalumno", all=TRUE, suffixes = c("",".y"))
+bbdd <- merge(bbdd, bbdd_padres, by="idalumno", all=TRUE, suffixes = c(".x",""))
 save(bbdd, file = "bbdd/alumnos_padres.RData")
-
 #Tabla con las variables del estudio
 variables <- data.frame(read_dta("bbdd/variables_alumnos.dta"))
 ```
 
-# Variables del estudio
+# Variables
 
-## Principales variables
-
-A continuación se presentan las principales variables del estudio categorizadas en las siguientes temáticas:
-
-```{r base temas, echo=TRUE, eval=TRUE}
-#BBDD con los temas de los cuestionarios
-temas <- data.frame(read_dta("bbdd/temas.dta"))
-colnames(temas) <- c("Identificador", "Temática", "Observación")
-temas <- temas[order(temas$Temática),]
-datatable(temas, rownames=FALSE, filter="top", options=list(pageLength=20, scro11X=TRUE), style="default", class="compact")
-```
-
-**Para revisar las variables se recomienda ingresar el nombre de la categoría. También se puede recurrir a la aplicación de consulta rápida [aquí](https://panelciudadania.shinyapps.io/Documento_consulta/)**
-
-## Variables desde los cuestionarios
+## Preguntas de los cuestionarios
 
 La tabla a continuación presenta una revisión más detallada para cada variable en el estudio. 
 
@@ -96,106 +89,71 @@ variables <- variables[order(variables$Temática),]
 datatable(variables, rownames=FALSE, filter="top", options=list(pageLength=10, scro11X=TRUE), style="default", class="compact")
 ```
 
+## Temáticas del estudio
+
+A continuación se presentan las principales temáticas del estudio para padres e hijos.
+
+```{r base temas, echo=TRUE, eval=TRUE}
+#BBDD con los temas de los cuestionarios
+temas <- data.frame(read_dta("bbdd/temas.dta"))
+colnames(temas) <- c("Identificador", "Temática", "Observación")
+temas <- temas[order(temas$Temática),]
+datatable(temas, rownames=FALSE, filter="top", options=list(pageLength=20, scro11X=TRUE), style="default", class="compact")
+```
+
+
 # Variables Espejo: vínculo entre padres e hijos
 
-A continuación se presenta un análisis correlacional exploratorio con las principales variables de estudio que se replican integramente para padres e hijos. Cabe mencionar que varias de las variables se asumen como continuas solo con fines descriptivos, a su vez, solo se etiquetan las variables principales. 
+A continuación se presenta un análisis correlacional exploratorio con las principales variables de estudio que se replican integramente para padres e hijos. Cabe mencionar que el análisis considera una base de datos en que los datos faltantes fueron excluídos del análisis. La siguiente sección presenta descriptivos de las variables y correlaciones policóricas. 
 
-## Interés político y Participación
+## Interés Político
 
-+ Interés político (1:Nada, 2:Poco, 3:Bastante, 4:Mucho)	
-+ Participación (1:No, nunca he hecho esto, 2: Sí, dentro de los últimos tres años, 3: Sí, dentro de los últimos doce meses)
+Categorías: 
+
+1. Nada
+2. Poco
+3. Bastante
+4. Mucho
 
 ```{r interes pol, echo=TRUE, eval=TRUE}
 #Objeto con las variables de interés:
 #Participación e interés político
-polit <- bbdd %>% dplyr::select(alp16, pap17,
-alp17_1, pap13_1,
-alp17_2, pap13_2,
-alp17_3, pap13_3,
-alp17_4, pap13_4,
-alp17_5, pap13_5,
-alp17_6, pap13_6,
-alp17_7, pap13_7,
-alp17_8, pap13_8,
-alp17_9, pap13_9,
-alp17_10, pap13_10)
+intpolit <- bbdd %>% 
+  select(alp16, pap17)
 #Recodificamos missing
-polit[polit == "1"] <- 1
-polit[polit == "2"] <- 2
-polit[polit == "3"] <- 3
-polit[polit == "4"] <- 4
-polit[polit == "99"] <- NA
-polit[polit == "0"] <- NA
+intpolit[intpolit == "1"] <- 1
+intpolit[intpolit == "2"] <- 2
+intpolit[intpolit == "3"] <- 3
+intpolit[intpolit == "4"] <- 4
+intpolit[intpolit == "99"] <- NA
+intpolit[intpolit == "0"] <- NA
 #Etiqueta para cada variable
-Hmisc::label(polit$alp16) <- "Interes Político (Hijos)"
-Hmisc::label(polit$pap17) <- "Interes Político (Padres)"
-Hmisc::label(polit$alp17_1) <- "Firmar una petición (Hijos)"
-Hmisc::label(polit$pap13_1) <- "Firmar una petición (Padres)"
-Hmisc::label(polit$alp17_2) <- "Asistir a una marcha (Hijos)"
-Hmisc::label(polit$pap13_2) <- "Asistir a una marcha (Padres)"
-Hmisc::label(polit$alp17_3) <- "Donar dinero para una act. pol. (Hijos)"
-Hmisc::label(polit$pap13_3) <- "Donar dinero para una act. pol. (Padres)"
-Hmisc::label(polit$alp17_4) <- "Figurar en los medios (Hijos)"
-Hmisc::label(polit$pap13_4) <- "Figurar en los medios (Padres)"
-Hmisc::label(polit$alp17_5) <- "Participar en una huelga (Hijos)"
-Hmisc::label(polit$pap13_5) <- "Participar en una huelga (Padres)"
-Hmisc::label(polit$alp17_6) <- "Trabajar en una campaña electoral (Hijos)"
-Hmisc::label(polit$pap13_6) <- "Trabajar en una campaña electoral (Padres)"
-Hmisc::label(polit$alp17_7) <- "RRSS para expresar opinión (Hijos)"
-Hmisc::label(polit$pap13_7) <- "RRSS para expresar opinión  (Padres)"
-Hmisc::label(polit$alp17_8) <- "Convencer a otros por un partido/candidato (Hijos)"
-Hmisc::label(polit$pap13_8) <- "Convencer a otros por un partido/candidato (Padres)"
-Hmisc::label(polit$alp17_9) <- "Toma de recintos (Hijos)"
-Hmisc::label(polit$pap13_9) <- "Toma de recintos (Padres)"
-Hmisc::label(polit$alp17_10) <- "Bloqueo de calles o carreteras (Hijos)"
-Hmisc::label(polit$pap13_10) <- "Bloqueo de calles o carreteras (Padres)"
-
-names(polit)[1]<- "Interes Político(Hijos)"
-names(polit)[2]<- "Interes Político(Padres)"
-names(polit)[3]<- "Firmar una petición(Hijos)"
-names(polit)[4]<- "Firmar una petición(Padres)"
-names(polit)[5]<- "Asistir a una marcha(Hijos)"
-names(polit)[6]<- "Asistir a una marcha(Padres)"
-names(polit)[7]<- "Donar para una act. pol.(Hijos)"
-names(polit)[8]<- "Donar para una act. pol.(Padres)"
-names(polit)[9]<- "Figurar en los medios(Hijos)"
-names(polit)[10]<- "Figurar en los medios(Padres)"
-names(polit)[11]<- "Participar en una huelga(Hijos)"
-names(polit)[12]<- "Participar en una huelga(Padres)"
-names(polit)[13]<- "Trabajar en una campaña(Hijos)"
-names(polit)[14]<- "Trabajar en una campaña(Padres)"
-names(polit)[15]<- "Usar RRSS para opinar(Hijos)"
-names(polit)[16]<- "Usar RRSS para opinar(Padres)"
-names(polit)[17]<- "Convencer a otros: partido(Hijos)"
-names(polit)[18]<- "Convencer a otros: partido(Padres)"
-names(polit)[19]<- "Toma de recintos(Hijos)"
-names(polit)[20]<- "Toma de recintos(Padres)"
-names(polit)[21]<- "Bloqueo de calles/carreteras(Hijos)"
-names(polit)[22]<- "Bloqueo de calles/carreteras(Padres)"
+Hmisc::label(intpolit$alp16) <- "Interes Político (Hijos)"
+Hmisc::label(intpolit$pap17) <- "Interes Político (Padres)"
 
 #Descriptivos
-#Hmisc::describe(polit)
+Hmisc::describe(intpolit)
+#Histogram
+intpolit %>%
+  keep(is.numeric) %>% 
+  gather() %>% 
+  ggplot(aes(value)) +
+    facet_wrap(~ key, scales = "free", ncol=2) +
+    geom_histogram(binwidth=1,colour="white") 
 
-#Mapa de Histogramas
-#polit %>%
-#  keep(is.numeric) %>% 
-#  gather() %>% 
-#  ggplot(aes(value)) +
-#    facet_wrap(~ key, scales = "free") +
-#    geom_histogram(binwidth=1,colour="white") 
+#Correlaciones policóricas
+polychoric(intpolit)
 
-#Correlaciones padre e hijo
-pairs.panels(polit[1:2], hist.col="gray", digit=2, stars = TRUE)
-pairs.panels(polit[3:6], hist.col="gray", digit=2, stars = TRUE)
-pairs.panels(polit[7:10], hist.col="gray", digit=2, stars = TRUE)
-pairs.panels(polit[11:14], hist.col="gray", digit=2, stars = TRUE)
-pairs.panels(polit[15:18], hist.col="gray", digit=2, stars = TRUE)
-pairs.panels(polit[19:22], hist.col="gray", digit=2, stars = TRUE)
 ```
 
 ## Percepción sobre la democracia
 
-+ Nivel de acuerdo (1:Muy en desacuerdo, 2:En desacuerdo, 3:De acuerdo, 4:Muy de acuerdo)
+Nivel de acuerdo: 
+
+1. Muy en desacuerdo 
+2. En desacuerdo 
+3. De acuerdo
+4. Muy de acuerdo
 
 ```{r democracia, echo=TRUE, eval=TRUE}
 #Percepción sobre la democracia
@@ -229,19 +187,274 @@ names(democracia)[12]<- "Gob.cerrar los medios de comunicación que lo critiquen
 names(democracia)[13]<- "Presidente no está de acuerdo con el Congreso debería disolverlo(Hijos)"
 names(democracia)[14]<- "Presidente no está de acuerdo con el Congreso debería disolverlo(Padres)"
 
-#Correlaciones padre e hijo
-pairs.panels(democracia[1:2], hist.col="gray", digit=2, stars = TRUE)
-pairs.panels(democracia[3:4], hist.col="gray", digit=2, stars = TRUE)
-pairs.panels(democracia[5:6], hist.col="gray", digit=2, stars = TRUE)
-pairs.panels(democracia[7:8], hist.col="gray", digit=2, stars = TRUE)
-pairs.panels(democracia[9:10], hist.col="gray", digit=2, stars = TRUE)
-pairs.panels(democracia[11:12], hist.col="gray", digit=2, stars = TRUE)
-pairs.panels(democracia[13:14], hist.col="gray", digit=2, stars = TRUE)
+#Descriptivos
+Hmisc::describe(democracia)
+#Histogram
+democracia %>% select(1:4) %>% 
+  keep(is.numeric) %>% 
+  gather() %>% 
+  ggplot(aes(value)) +
+    facet_wrap(~ key, scales = "free", ncol=2) +
+    geom_histogram(binwidth=1,colour="white") 
+
+democracia %>% select(5:8) %>% 
+  keep(is.numeric) %>% 
+  gather() %>% 
+  ggplot(aes(value)) +
+    facet_wrap(~ key, scales = "free", ncol=2) +
+    geom_histogram(binwidth=1,colour="white") 
+
+democracia %>% select(9:12) %>% 
+  keep(is.numeric) %>% 
+  gather() %>% 
+  ggplot(aes(value)) +
+    facet_wrap(~ key, scales = "free", ncol=2) +
+    geom_histogram(binwidth=1,colour="white") 
+
+democracia %>% select(13:14) %>% 
+  keep(is.numeric) %>% 
+  gather() %>% 
+  ggplot(aes(value)) +
+    facet_wrap(~ key, scales = "free", ncol=2) +
+    geom_histogram(binwidth=1,colour="white") 
+
+#Correlaciones policóricas
+polychoric(democracia[1:2])
+polychoric(democracia[3:4])
+polychoric(democracia[5:6])
+polychoric(democracia[7:8])
+polychoric(democracia[9:10])
+polychoric(democracia[11:12])
+polychoric(democracia[13:14])
+
+```
+
+## Confianza en las instituciones
+
++ Nivel de confianza: 
+
+1. Nada o muy poco
+2. Algo
+3. Bastante
+4. Mucho
+
+```{r confianza, echo=TRUE, eval=TRUE}
+#Confianza en las instituciones
+confianza <- bbdd %>% dplyr::select(alp27_1, pap21_1,
+alp27_2, pap21_2,
+alp27_3, pap21_3,
+alp27_4, pap21_4,
+alp27_5, pap21_5,
+alp27_6, pap21_6,
+alp27_7, pap21_7,
+alp27_8, pap21_8,
+alp27_9, pap21_9,
+alp27_10, pap21_10,
+alp27_11, pap21_11,
+alp27_12, pap21_12,
+alp27_13, pap21_13)
+#Recodificamos missing
+confianza[confianza == "1"] <- 1
+confianza[confianza == "2"] <- 2
+confianza[confianza == "3"] <- 3
+confianza[confianza == "4"] <- 4
+confianza[confianza == "99"] <- NA
+confianza[confianza  == "0"] <- NA
+#Nombre variables
+names(confianza)[1]<- "Congreso Nacional (Hijos)"
+names(confianza)[2]<- "Congreso Nacional (Padres)"
+names(confianza)[3]<- "Tribunales de Justicia (Hijos)"
+names(confianza)[4]<- "Tribunales de Justicia (Padres)"
+names(confianza)[5]<- "Gobierno (Hijos)"
+names(confianza)[6]<- "Gobierno (Padres)"
+names(confianza)[7]<- "Partidos políticos (Hijos)"
+names(confianza)[8]<- "Partidos políticos (Padres)"
+names(confianza)[9]<- "Bancos (Hijos)"
+names(confianza)[10]<- "Bancos (Padres)"
+names(confianza)[11]<- "Empresas privadas (Hijos)"
+names(confianza)[12]<- "Empresas privadas (Padres)"
+names(confianza)[13]<- "Carabineros (Hijos)"
+names(confianza)[14]<- "Carabineros (Padres)"
+names(confianza)[15]<- "Fuerzas Armadas (Hijos)"
+names(confianza)[16]<- "Fuerzas Armadas (Padres)"
+names(confianza)[17]<- "Sindicatos (Hijos)"
+names(confianza)[18]<- "Sindicatos (Padres)"
+names(confianza)[19]<- "Radios (Hijos)"
+names(confianza)[20]<- "Radios (Padres)"
+names(confianza)[21]<- "Televisión (Hijos)"
+names(confianza)[22]<- "Televisión (Padres)"
+names(confianza)[23]<- "Diarios (Hijos)"
+names(confianza)[24]<- "Diarios (Padres)"
+names(confianza)[25]<- "RRSS (Hijos)"
+names(confianza)[26]<- "RRSS (Padres)"
+
+#Descriptivos
+Hmisc::describe(confianza)
+#Histogram
+confianza %>% select(1:6) %>% 
+  keep(is.numeric) %>% 
+  gather() %>% 
+  ggplot(aes(value)) +
+    facet_wrap(~ key, scales = "free", ncol=2) +
+    geom_histogram(binwidth=1,colour="white") 
+
+confianza %>% select(7:12) %>% 
+  keep(is.numeric) %>% 
+  gather() %>% 
+  ggplot(aes(value)) +
+    facet_wrap(~ key, scales = "free", ncol=2) +
+    geom_histogram(binwidth=1,colour="white") 
+
+confianza %>% select(13:18) %>% 
+  keep(is.numeric) %>% 
+  gather() %>% 
+  ggplot(aes(value)) +
+    facet_wrap(~ key, scales = "free", ncol=2) +
+    geom_histogram(binwidth=1,colour="white") 
+
+confianza %>% select(19:26) %>% 
+  keep(is.numeric) %>% 
+  gather() %>% 
+  ggplot(aes(value)) +
+    facet_wrap(~ key, scales = "free", ncol=2) +
+    geom_histogram(binwidth=1,colour="white") 
+
+
+#Correlaciones policóricas
+polychoric(confianza[1:4])
+polychoric(confianza[5:8])
+polychoric(confianza[9:12])
+polychoric(confianza[13:16])
+polychoric(confianza[17:20])
+polychoric(confianza[21:24])
+polychoric(confianza[25:26])
+
+```
+
+## Participación
+
+Categorías: 
+
+1. No, nunca he hecho esto
+2. Sí, dentro de los últimos tres años
+3. Sí, dentro de los últimos doce meses
+
+```{r part pol, echo=TRUE, eval=TRUE}
+#Objeto con las variables de interés:
+polit <- bbdd %>% 
+  select(alp17_1, pap13_1,
+         alp17_2, pap13_2,
+         alp17_3, pap13_3, 
+         alp17_4, pap13_4, 
+         alp17_5, pap13_5,
+         alp17_6, pap13_6, 
+         alp17_7, pap13_7,
+         alp17_8, pap13_8,
+         alp17_9, pap13_9,
+         alp17_10, pap13_10)
+#Recodificamos missing
+polit[polit == "1"] <- 1
+polit[polit == "2"] <- 2
+polit[polit == "3"] <- 3
+polit[polit == "4"] <- 4
+polit[polit == "99"] <- NA
+polit[polit == "0"] <- NA
+#Etiqueta para cada variable
+Hmisc::label(polit$alp17_1) <- "Firmar una petición (Hijos)"
+Hmisc::label(polit$pap13_1) <- "Firmar una petición (Padres)"
+Hmisc::label(polit$alp17_2) <- "Asistir a una marcha (Hijos)"
+Hmisc::label(polit$pap13_2) <- "Asistir a una marcha (Padres)"
+Hmisc::label(polit$alp17_3) <- "Donar dinero para una act. pol. (Hijos)"
+Hmisc::label(polit$pap13_3) <- "Donar dinero para una act. pol. (Padres)"
+Hmisc::label(polit$alp17_4) <- "Figurar en los medios (Hijos)"
+Hmisc::label(polit$pap13_4) <- "Figurar en los medios (Padres)"
+Hmisc::label(polit$alp17_5) <- "Participar en una huelga (Hijos)"
+Hmisc::label(polit$pap13_5) <- "Participar en una huelga (Padres)"
+Hmisc::label(polit$alp17_6) <- "Trabajar en una campaña electoral (Hijos)"
+Hmisc::label(polit$pap13_6) <- "Trabajar en una campaña electoral (Padres)"
+Hmisc::label(polit$alp17_7) <- "RRSS para expresar opinión (Hijos)"
+Hmisc::label(polit$pap13_7) <- "RRSS para expresar opinión  (Padres)"
+Hmisc::label(polit$alp17_8) <- "Convencer a otros por un partido/candidato (Hijos)"
+Hmisc::label(polit$pap13_8) <- "Convencer a otros por un partido/candidato (Padres)"
+Hmisc::label(polit$alp17_9) <- "Toma de recintos (Hijos)"
+Hmisc::label(polit$pap13_9) <- "Toma de recintos (Padres)"
+Hmisc::label(polit$alp17_10) <- "Bloqueo de calles o carreteras (Hijos)"
+Hmisc::label(polit$pap13_10) <- "Bloqueo de calles o carreteras (Padres)"
+
+names(polit)[1]<- "Firmar una petición(Hijos)"
+names(polit)[2]<- "Firmar una petición(Padres)"
+names(polit)[3]<- "Asistir a una marcha(Hijos)"
+names(polit)[4]<- "Asistir a una marcha(Padres)"
+names(polit)[5]<- "Donar para una act. pol.(Hijos)"
+names(polit)[6]<- "Donar para una act. pol.(Padres)"
+names(polit)[7]<- "Figurar en los medios(Hijos)"
+names(polit)[8]<- "Figurar en los medios(Padres)"
+names(polit)[9]<- "Participar en una huelga(Hijos)"
+names(polit)[10]<- "Participar en una huelga(Padres)"
+names(polit)[11]<- "Trabajar en una campaña(Hijos)"
+names(polit)[12]<- "Trabajar en una campaña(Padres)"
+names(polit)[13]<- "Usar RRSS para opinar(Hijos)"
+names(polit)[14]<- "Usar RRSS para opinar(Padres)"
+names(polit)[15]<- "Convencer a otros: partido(Hijos)"
+names(polit)[16]<- "Convencer a otros: partido(Padres)"
+names(polit)[17]<- "Toma de recintos(Hijos)"
+names(polit)[18]<- "Toma de recintos(Padres)"
+names(polit)[19]<- "Bloqueo de calles/carreteras(Hijos)"
+names(polit)[20]<- "Bloqueo de calles/carreteras(Padres)"
+
+#Descriptivos
+Hmisc::describe(polit)
+#Histogram
+polit %>% select(1:6) %>% 
+  keep(is.numeric) %>% 
+  gather() %>% 
+  ggplot(aes(value)) +
+    facet_wrap(~ key, scales = "free", ncol=2) +
+    geom_histogram(binwidth=1,colour="white") 
+
+polit %>% select(7:12) %>% 
+  keep(is.numeric) %>% 
+  gather() %>% 
+  ggplot(aes(value)) +
+    facet_wrap(~ key, scales = "free", ncol=2) +
+    geom_histogram(binwidth=1,colour="white") 
+
+polit %>% select(13:16) %>% 
+  keep(is.numeric) %>% 
+  gather() %>% 
+  ggplot(aes(value)) +
+    facet_wrap(~ key, scales = "free", ncol=2) +
+    geom_histogram(binwidth=1,colour="white") 
+
+polit %>% select(17:20) %>% 
+  keep(is.numeric) %>% 
+  gather() %>% 
+  ggplot(aes(value)) +
+    facet_wrap(~ key, scales = "free", ncol=2) +
+    geom_histogram(binwidth=1,colour="white") 
+
+#Correlaciones policóricas
+polychoric(polit[1:2])
+polychoric(polit[3:4])
+polychoric(polit[5:6])
+polychoric(polit[7:8])
+polychoric(polit[9:10])
+polychoric(polit[11:12])
+polychoric(polit[13:14])
+polychoric(polit[15:16])
+polychoric(polit[17:18])
+polychoric(polit[19:20])
+
 ```
 
 ## Definición Buen ciudadano
 
-+ Nivel de importancia (1:Sin ninguna importancia, 2: No muy importante, 3: Importante, 4:Muy importante)
++ Nivel de importancia 
+
+1. Sin ninguna importancia
+2. No muy importante
+3. Importante
+4. Muy importante
 
 ```{r ciudadano, echo=TRUE, eval=TRUE}
 #Definición Buen ciudadano
@@ -306,86 +519,81 @@ names(buen_ciudadano)[32]<- "Apoyar a quienes están peor que uno(Padres)"
 names(buen_ciudadano)[33]<- "Involucrarse en ayudar a países menos desarrollados(Hijos)"
 names(buen_ciudadano)[34]<- "Involucrarse en ayudar a países menos desarrollados(Padres)"
 
-#Correlaciones padre e hijo
-pairs.panels(buen_ciudadano[1:2], hist.col="gray", digit=2, stars = TRUE)
-pairs.panels(buen_ciudadano[3:6], hist.col="gray", digit=2, stars = TRUE)
-pairs.panels(buen_ciudadano[7:10], hist.col="gray", digit=2, stars = TRUE)
-pairs.panels(buen_ciudadano[11:14], hist.col="gray", digit=2, stars = TRUE)
-pairs.panels(buen_ciudadano[15:18], hist.col="gray", digit=2, stars = TRUE)
-pairs.panels(buen_ciudadano[19:22], hist.col="gray", digit=2, stars = TRUE)
-pairs.panels(buen_ciudadano[23:26], hist.col="gray", digit=2, stars = TRUE)
-pairs.panels(buen_ciudadano[27:30], hist.col="gray", digit=2, stars = TRUE)
-pairs.panels(buen_ciudadano[31:34], hist.col="gray", digit=2, stars = TRUE)
+#Descriptivos
+Hmisc::describe(buen_ciudadano)
+#Histogram
+buen_ciudadano %>% select(1:6) %>% 
+  keep(is.numeric) %>% 
+  gather() %>% 
+  ggplot(aes(value)) +
+    facet_wrap(~ key, scales = "free", ncol=2) +
+    geom_histogram(binwidth=1,colour="white") 
+
+buen_ciudadano %>% select(7:12) %>% 
+  keep(is.numeric) %>% 
+  gather() %>% 
+  ggplot(aes(value)) +
+    facet_wrap(~ key, scales = "free", ncol=2) +
+    geom_histogram(binwidth=1,colour="white") 
+
+buen_ciudadano %>% select(13:18) %>% 
+  keep(is.numeric) %>% 
+  gather() %>% 
+  ggplot(aes(value)) +
+    facet_wrap(~ key, scales = "free", ncol=2) +
+    geom_histogram(binwidth=1,colour="white") 
+
+buen_ciudadano %>% select(19:24) %>% 
+  keep(is.numeric) %>% 
+  gather() %>% 
+  ggplot(aes(value)) +
+    facet_wrap(~ key, scales = "free", ncol=2) +
+    geom_histogram(binwidth=1,colour="white") 
+
+buen_ciudadano %>% select(25:30) %>% 
+  keep(is.numeric) %>% 
+  gather() %>% 
+  ggplot(aes(value)) +
+    facet_wrap(~ key, scales = "free", ncol=2) +
+    geom_histogram(binwidth=1,colour="white") 
+
+buen_ciudadano %>% select(31:34) %>% 
+  keep(is.numeric) %>% 
+  gather() %>% 
+  ggplot(aes(value)) +
+    facet_wrap(~ key, scales = "free", ncol=2) +
+    geom_histogram(binwidth=1,colour="white") 
+
+#Correlaciones policóricas
+polychoric(buen_ciudadano[1:2])
+polychoric(buen_ciudadano[3:4])
+polychoric(buen_ciudadano[5:6])
+polychoric(buen_ciudadano[7:8])
+polychoric(buen_ciudadano[9:10])
+polychoric(buen_ciudadano[11:12])
+polychoric(buen_ciudadano[13:14])
+polychoric(buen_ciudadano[15:16])
+polychoric(buen_ciudadano[17:18])
+polychoric(buen_ciudadano[19:20])
+polychoric(buen_ciudadano[21:22])
+polychoric(buen_ciudadano[23:24])
+polychoric(buen_ciudadano[25:26])
+polychoric(buen_ciudadano[27:28])
+polychoric(buen_ciudadano[29:30])
+polychoric(buen_ciudadano[31:32])
+polychoric(buen_ciudadano[33:34])
 
 ```
 
-## Confianza en las instituciones
-
-+ Nivel de confianza (1:Nada o muy poco, 2:Algo, 3:Bastante, 4:Mucho)
-
-```{r confianza, echo=TRUE, eval=TRUE}
-#Confianza en las instituciones
-confianza <- bbdd %>% dplyr::select(alp27_1, pap21_1,
-alp27_2, pap21_2,
-alp27_3, pap21_3,
-alp27_4, pap21_4,
-alp27_5, pap21_5,
-alp27_6, pap21_6,
-alp27_7, pap21_7,
-alp27_8, pap21_8,
-alp27_9, pap21_9,
-alp27_10, pap21_10,
-alp27_11, pap21_11,
-alp27_12, pap21_12,
-alp27_13, pap21_13)
-#Recodificamos missing
-confianza[confianza == "1"] <- 1
-confianza[confianza == "2"] <- 2
-confianza[confianza == "3"] <- 3
-confianza[confianza == "4"] <- 4
-confianza[confianza == "99"] <- NA
-confianza[confianza  == "0"] <- NA
-#Nombre variables
-names(confianza)[1]<- "Congreso Nacional (Hijos)"
-names(confianza)[2]<- "Congreso Nacional (Padres)"
-names(confianza)[3]<- "Tribunales de Justicia (Hijos)"
-names(confianza)[4]<- "Tribunales de Justicia (Padres)"
-names(confianza)[5]<- "Gobierno (Hijos)"
-names(confianza)[6]<- "Gobierno (Padres)"
-names(confianza)[7]<- "Partidos políticos (Hijos)"
-names(confianza)[8]<- "Partidos políticos (Padres)"
-names(confianza)[9]<- "Bancos (Hijos)"
-names(confianza)[10]<- "Bancos (Padres)"
-names(confianza)[11]<- "Empresas privadas (Hijos)"
-names(confianza)[12]<- "Empresas privadas (Padres)"
-names(confianza)[13]<- "Carabineros (Hijos)"
-names(confianza)[14]<- "Carabineros (Padres)"
-names(confianza)[15]<- "Fuerzas Armadas (Hijos)"
-names(confianza)[16]<- "Fuerzas Armadas (Padres)"
-names(confianza)[17]<- "Sindicatos (Hijos)"
-names(confianza)[18]<- "Sindicatos (Padres)"
-names(confianza)[19]<- "Radios (Hijos)"
-names(confianza)[20]<- "Radios (Padres)"
-names(confianza)[21]<- "Televisión (Hijos)"
-names(confianza)[22]<- "Televisión (Padres)"
-names(confianza)[23]<- "Diarios (Hijos)"
-names(confianza)[24]<- "Diarios (Padres)"
-names(confianza)[25]<- "RRSS (Hijos)"
-names(confianza)[26]<- "RRSS (Padres)"
-
-#Correlaciones padre e hijo
-pairs.panels(confianza[1:2], hist.col="gray", digit=2, stars = TRUE)
-pairs.panels(confianza[3:6], hist.col="gray", digit=2, stars = TRUE)
-pairs.panels(confianza[7:10], hist.col="gray", digit=2, stars = TRUE)
-pairs.panels(confianza[11:14], hist.col="gray", digit=2, stars = TRUE)
-pairs.panels(confianza[15:18], hist.col="gray", digit=2, stars = TRUE)
-pairs.panels(confianza[19:22], hist.col="gray", digit=2, stars = TRUE)
-pairs.panels(confianza[23:26], hist.col="gray", digit=2, stars = TRUE)
-```
 
 ## Percepción de Desigualdad
 
-+ Nivel de acuerdo (1:Muy en desacuerdo, 2:En desacuerdo, 3:De acuerdo, 4:Muy de acuerdo)
++ Nivel de acuerdo 
+
+1. Muy en desacuerdo
+2. En desacuerdo
+3. De acuerdo
+4. Muy de acuerdo
 
 ```{r desigualdad, echo=TRUE, eval=TRUE}
 #Percepciones sobre Desigualdad
@@ -425,26 +633,47 @@ names(desigualdad)[16]<- "Es justo mayores ingresos, mejor salud(Padres)"
 names(desigualdad)[17]<- "Gobierno debería reducir las diferencias de ingreso(Hijos)"
 names(desigualdad)[18]<- "Gobierno debería reducir las diferencias de ingreso(Padres)"
 
-#Correlaciones padre e hijo
-pairs.panels(desigualdad[1:2], hist.col="gray", digit=2, stars = TRUE)
-pairs.panels(desigualdad[3:4], hist.col="gray", digit=2, stars = TRUE)
-pairs.panels(desigualdad[5:6], hist.col="gray", digit=2, stars = TRUE)
-pairs.panels(desigualdad[7:8], hist.col="gray", digit=2, stars = TRUE)
-pairs.panels(desigualdad[9:10], hist.col="gray", digit=2, stars = TRUE)
-pairs.panels(desigualdad[11:12], hist.col="gray", digit=2, stars = TRUE)
-pairs.panels(desigualdad[13:14], hist.col="gray", digit=2, stars = TRUE)
-pairs.panels(desigualdad[15:16], hist.col="gray", digit=2, stars = TRUE)
-pairs.panels(desigualdad[17:18], hist.col="gray", digit=2, stars = TRUE)
+#Descriptivos
+Hmisc::describe(desigualdad)
+#Histogram
+desigualdad %>% select(1:6) %>% 
+  keep(is.numeric) %>% 
+  gather() %>% 
+  ggplot(aes(value)) +
+    facet_wrap(~ key, scales = "free", ncol=2) +
+    geom_histogram(binwidth=1,colour="white") 
 
-#Etiquetas de las variables
-#etiquetas <- data.frame(read_dta("bbdd/etiquetas.dta"))
-#names(desigualdad) <- etiquetas$descripcion[match(names(desigualdad),etiquetas$bbdd)]
+desigualdad %>% select(7:12) %>% 
+  keep(is.numeric) %>% 
+  gather() %>% 
+  ggplot(aes(value)) +
+    facet_wrap(~ key, scales = "free", ncol=2) +
+    geom_histogram(binwidth=1,colour="white") 
+
+desigualdad %>% select(13:18) %>% 
+  keep(is.numeric) %>% 
+  gather() %>% 
+  ggplot(aes(value)) +
+    facet_wrap(~ key, scales = "free", ncol=2) +
+    geom_histogram(binwidth=1,colour="white") 
+
+#Correlaciones policóricas
+polychoric(desigualdad[1:4])
+polychoric(desigualdad[5:8])
+polychoric(desigualdad[9:12])
+polychoric(desigualdad[13:16])
+polychoric(desigualdad[17:18])
 
 ```
 
 ## Perpceciones sobre paz y violencia
 
-+ Nivel de acuerdo (1:Muy en desacuerdo, 2:En desacuerdo, 3:De acuerdo, 4:Muy de acuerdo)
++ Nivel de acuerdo 
+
+1. Muy en desacuerdo
+2. En desacuerdo
+3. De acuerdo
+4. Muy de acuerdo
 
 ```{r paz, echo=TRUE, eval=TRUE}
 #Percepciones sobre Desigualdad
@@ -469,13 +698,21 @@ names(paz)[6]<- "Ciudadanos castigan criminales(Padres)"
 names(paz)[7]<- "Violencia para lograr metas(Hijos)"
 names(paz)[8]<- "Violencia para lograr metas(Padres)"
 
-#Correlaciones padre e hijo
-pairs.panels(paz[1:4], hist.col="gray", digit=2, stars = TRUE)
-pairs.panels(paz[5:8], hist.col="gray", digit=2, stars = TRUE)
+#Descriptivos
+Hmisc::describe(paz)
+#Histogram
+paz %>% select(1:8) %>% 
+  keep(is.numeric) %>% 
+  gather() %>% 
+  ggplot(aes(value)) +
+    facet_wrap(~ key, scales = "free", ncol=2) +
+    geom_histogram(binwidth=1,colour="white") 
 
-#Etiquetas de las variables
-#etiquetas <- data.frame(read_dta("bbdd/etiquetas.dta"))
-#names(desigualdad) <- etiquetas$descripcion[match(names(desigualdad),etiquetas$bbdd)]
+#Correlaciones policóricas
+polychoric(paz[1:2])
+polychoric(paz[3:4])
+polychoric(paz[5:6])
+polychoric(paz[7:8])
 
 ```
 
