@@ -35,6 +35,8 @@ library(purrr)
 library(tidyr)
 library(vcd)
 library(vcdExtra)
+library(skimr)
+library(sjmisc)
 
 #Global
 options(max.print = "500")
@@ -46,6 +48,7 @@ opts_chunk$set(echo = FALSE,
                message = FALSE,
                warning = FALSE)
 opts_knit$set(width = 500)
+options(max.print=1000000)
 ```
 
 # Bases de datos
@@ -74,6 +77,56 @@ save(bbdd, file = "bbdd/alumnos_padres.RData")
 #Tabla con las variables del estudio
 variables <- data.frame(read_dta("bbdd/variables_alumnos.dta"))
 ```
+
+## Análisis de No respuesta
+
+Dadas las diferencias observadas en el merge entre las tres bases de datos se procede a realizar un análisis de no respuesta. Dicho se observa la siguiente:
+
+1. La no respuesta de la base `bbdd_puntajes` son 1841 observaciones (sin información en los resultados de la prueba de conocimiento) y los missing de la base `bbdd_alumnos` son 1624 (sin respuesta en los cuestionarios). 
+
+2. Al realizar el cruce de ambas bases de datos, hay 28 observaciones que solo tienen información en la prueba de conocimiento, no hay datos para los cuestionarios (de estudiantes)
+
+3. Hay 245 observaciones que tienen información en el cuestionario de estudiantes, pero no hay datos para los resultados de la prueba de conocimiento. 
+
+Se propone hacer el merge de las bases de datos:`bbdd_puntajes` y `bbdd_alumnos`, luego eliminar eliminar la no respuesta para ambos casos y nos quedamos con **8344** observaciones con información para ambas encuestas. Se pierden 1869 observaciones de las cuales 1841 corresponden por no tener información en la base de datos de puntaje y 28 por no tener información en los cuestionarios. 
+
+```{r nr, echo=TRUE, eval=TRUE}
+#Base general
+skim(bbdd_puntajes)#1841 observaciones con missing data en la variable de interés (puntaje en la prueba)
+
+#All values 99 replace with NA
+bbdd_alumnos[bbdd_alumnos=="99"] <- NA
+skim(bbdd_alumnos)
+
+#All values 99 replace with NA
+bbdd_padres[bbdd_padres=="99"] <- NA
+skim(bbdd_padres)
+
+#Identificamos respuestas
+bbdd_alumnos$resp_al <- 1
+bbdd_padres$resp_pap <- 1
+
+#Merge con la base de estudiantes
+bbdd_missing <- merge(bbdd_puntajes, bbdd_alumnos, by="idalumno", all=TRUE, suffixes = c("",".y"))
+print(skim(bbdd_missing))
+
+#Recode gender
+bbdd_missing$sexo <- factor(bbdd_missing$sexo)
+bbdd_missing$sexo <- as.numeric(bbdd_missing$sexo)
+bbdd_missing$sexo <- rec(bbdd_missing$sexo, rec="2=1; 1=0")
+bbdd_missing$sexo <-factor(bbdd_missing$sexo, levels = c(0,1), labels = c("Hombre", "Mujer"))
+
+#Identificamos missing 
+bbdd_missing$resp_al[is.na(bbdd_missing$puntaje) & bbdd_missing$resp_al == 1] <- 0
+nresp <- glm(as.numeric(resp_al)~ sexo+alp2+alp3, data=bbdd_missing, family="binomial")
+summary(nresp)
+screenreg(nresp)
+
+#Drop missing
+
+bbdd_missing <- na.omit(bbdd_missing)
+```
+
 
 # Variables
 
