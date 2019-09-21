@@ -1,5 +1,5 @@
 ---
-title: "Estudio Datos Agencia de la Educación: Reporte"
+title: "Reporte Base de datos Agencia de la Educación"
 author: "Juan Carlos Castillo, Daniel Miranda & José Conejeros"
 date: '`r format(Sys.time(), "%d/%m/%Y")`'
 output:
@@ -10,9 +10,22 @@ output:
     self_contained: true
     thumbnails: false
     lightbox: false
+subtitle: "Fondecyt 1181239. Socialización política y educación para la ciudadanía: el rol de la familia y de la escuela."
 ---
 
-A continuación se presenta un breve reporte técnico con las pricipales variables disponibles en las bases otorgadas por la agencia de la educación. Este documento se divide en cuatro secciones: procesamiento de datos, descripción de las principales variables del estudio, variables que se replican para padres e hijos y análisis correlacional para ambos grupos. 
+<div style="text-align: justify"> 
+
+A continuación se expone el reporte técnico con el análisis de las bases de datos otorgadas por la Agencia de la Calidad de la Educación, en marco de su evaluación nacional sobre formación ciudadana realizada el año 2017 a una muestra representativa de estudiantes de 8º básico. Esta evaluación cuenta con una muestra de escuelas llegando a un total de **10.213** estudiantes de 8º básico y considera la aplicación de cuestionarios actitudinales para los/as estudiantes y sus padres. 
+
+En ese sentido, el **objetivo** de este reporte es profundizar en un aspecto central del proyecto Fondecyt: identificar la transmisión intergeneracionla de la desigualdad política, orientada a evaluar la coincidencia de las actitudes, conocimiento, creencias y comportamiento para el ejercicio de la ciudadanía entre padres/madres y sus hijos(as). Para esto, el presente reporte considera el análisis de tres instrumentos: 
+
++ Resultados prueba de conocimiento cívico `bbdd_puntajes`
++ Cuestionarios a estudiantes sobre creencias, conocimiento, actitudes y prácticas (CCAP), para el ejercicio de la ciudadanía:`bbdd_estudiantes`
++ Cuestionarios a estudiantes sobre creencias, conocimiento, actitudes y prácticas (CCAP), para el ejercicio de la ciudadanía:`bbdd_padres`
+
+Este documento se divide en cuatro secciones: análisis de calidad de las bases de datos, variables disponibles para el estudio, descripción de las principales variables relevantes para los objetivos del proyecto y análisis correlacional de las principales variables entre padres e hijos, para finalizar con una sección de análisis de regresión múltiple considerando la información disponible.
+
+</div>
 
 ```{r opciones globales, warning=FALSE, cache=FALSE, include=FALSE, results="asis", echo=TRUE}
 rm(list = ls()) #limpiar la memoria
@@ -37,6 +50,8 @@ library(vcd)
 library(vcdExtra)
 library(skimr)
 library(sjmisc)
+library(dplyr)
+library(stargazer)
 
 #Global
 options(max.print = "500")
@@ -51,90 +66,200 @@ opts_knit$set(width = 500)
 options(max.print=1000000)
 ```
 
-# Bases de datos
+# Calidad bases de datos
 
 ## Información disponible
 
-La base de datos generados por la agencia de la educación son tres: 
+<div style="text-align: justify"> 
 
-1. Base de datos con los resultados de la prueba de conocimiento cívico (`bbdd_alumnos`) con un total de **10.213** observaciones.
-2. Base de datos con el cuestionario para estudiantes (`bbdd_alumnos`) con un total de **8589** observaciones.  
-3. Base de datos con el cuestionario para padres (`bbdd_alumnos`) con un total de **6770** observaciones.
+La información facilitada por la agencia de la educación se puede desglosar en tres bases de datos que tienen observación para los estudiantes de la muestra y sus padres. A continuación se detallan el número de observaciones y variables respectivas.
 
-Se realiza un merge dejando todas las observaciones (`bbdd`). Dada las diferencias entre bases de datos se oberva un importante número de casos pérdidos 
-
-A pesar de que la unión de las tres bases de datos arroja una base general `bbdd` con **10.213** observaciones, se debe considerar que hay **3.443** casos en las que no tenemos información para alguna de las tres bases de datos que fueron unidas. Por el momento solo se etiquetan las variables utilizadas en la sección de [Variables Espejo: vínculo entre padres e hijos]
+</div> 
 
 ```{r bbdd, echo=TRUE, eval=TRUE}
-#BBDD
+#Abrir bases de datos
 bbdd_puntajes <- read_dta("bbdd/alumnosFc_mrun.dta")
 bbdd_alumnos <- read_dta("bbdd/cuestAlumnos.dta")
 bbdd_padres <- read_dta("bbdd/cuestPadres.dta")
-#Merge: mantiene todas las observaciones
-bbdd <- merge(bbdd_puntajes, bbdd_alumnos, by="idalumno", all=TRUE, suffixes = c("",".y"))
-bbdd <- merge(bbdd, bbdd_padres, by="idalumno", all=TRUE, suffixes = c(".x",""))
-save(bbdd, file = "bbdd/alumnos_padres.RData")
-#Tabla con las variables del estudio
-variables <- data.frame(read_dta("bbdd/variables_alumnos.dta"))
+#Transformamos nuestras bases a un data frame
+bbdd_puntajes <- as.data.frame(bbdd_puntajes)
+names(bbdd_puntajes) <- tolower(names(bbdd_puntajes)) 
+bbdd_alumnos <- as.data.frame(bbdd_alumnos)
+names(bbdd_alumnos) <- tolower(names(bbdd_alumnos)) 
+bbdd_padres <- as.data.frame(bbdd_padres)
+names(bbdd_padres) <- tolower(names(bbdd_padres)) 
+#Tabla con las observaciones y variables para cada base de datos
+puntajes <- dim(bbdd_puntajes)
+alumnos <- dim(bbdd_alumnos)
+padres <- dim(bbdd_padres)
+names <- c("Puntajes", "Cuestionario Alumnos", "Cuestionario Padres")
+data <- rbind(puntajes, alumnos, padres)
+data <- as.data.frame(cbind(names, data))
+colnames(data) <- c("Base de datos", "Observaciones", "Variables")
+datatable(data, rownames=FALSE, filter="none", options=list(pageLength=10, scro11X=TRUE), style="default", class="compact")
 ```
 
-## Análisis de No respuesta
+<div style="text-align: justify"> 
 
-Dadas las diferencias observadas en el merge entre las tres bases de datos se procede a realizar un análisis de no respuesta. Dicho se observa la siguiente:
+Se realiza un merge con las tres bases de datos anteriores consolidando todo en una base única (`bbdd`). A raíz de las diferencias entre las observaciones disponibles detalladas en la tabla anterior, se obtiene un número importante de casos pérdidos para la base final. 
 
-1. La no respuesta de la base `bbdd_puntajes` son 1841 observaciones (sin información en los resultados de la prueba de conocimiento) y los missing de la base `bbdd_alumnos` son 1624 (sin respuesta en los cuestionarios). 
+A pesar de que la unión de estas tres bases de datos arroja una base general `bbdd` con **10.213** observaciones, se debe considerar que hay **3.443** casos para los que no tenemos información completa disponible en  alguna de las tres bases de datos anteriores. A partir A continuación se realiza una aproximación exploratoria para las variables existentes en cada una de las tres bases de datos. En la siguiente sección se realizará un análisis más detallado de estos casos pérdidos. 
 
-2. Al realizar el cruce de ambas bases de datos, hay 28 observaciones que solo tienen información en la prueba de conocimiento, no hay datos para los cuestionarios (de estudiantes)
+</div> 
 
-3. Hay 245 observaciones que tienen información en el cuestionario de estudiantes, pero no hay datos para los resultados de la prueba de conocimiento. 
+## Exploración bases de datos
 
-Se propone hacer el merge de las bases de datos:`bbdd_puntajes` y `bbdd_alumnos`, luego eliminar eliminar la no respuesta para ambos casos y nos quedamos con **8344** observaciones con información para ambas encuestas. Se pierden 1869 observaciones de las cuales 1841 corresponden por no tener información en la base de datos de puntaje y 28 por no tener información en los cuestionarios. 
+<div style="text-align: justify"> 
+
+El principal inconveniente de estas bases de datos es que las categorías 99 (doble marca) y 0 (vacío) no están registrados como casos pérdidos, por ende perdemos aún más observaciones sobre todo en el cuestionario de padres. Se debe tener claro esto a la hora de realizar los análisis en pro de las hipótesis del proyecto. 
+
+</div> 
+
+### BBDD Puntajes
+
++ Base de datos con la información sobre los puntajes obtenidos en la prueba de conocimiento cívico.  
+
+```{r puntajes, echo=TRUE, eval=TRUE}
+#Despejamos el environment
+rm(puntajes, alumnos, padres, names, data)
+#Base General con los puntajes: recodificamos el sexo a un factor
+bbdd_puntajes$sexo <- rec(bbdd_puntajes$sexo, rec="M=1; F=0")
+bbdd_puntajes$sexo <-factor(bbdd_puntajes$sexo, levels = c(0,1), labels = c("Mujer", "Hombre"))
+#Exploramos la base de datos
+skim_with(numeric = list(complete=NULL, p25=NULL, p50=NULL, p75=NULL),factor = list(complete=NULL), integer = list(complete=NULL), character = list(complete=NULL))
+skim(bbdd_puntajes, idalumno, mrbd, codigocurso, numerolista, sexo, ponderador, puntaje) %>% pander() #1841 missing
+```
+
+### BBDD Alumnos
+
++ Base de datos con las respuestas del cuestionario sobre CCAP para el ejercicio de la ciudadanía en estudiantes. Las categorías de 0 (vacío) y 99 (doble marca) se recodifican como missing.
+
+```{r alumnos, echo=TRUE, eval=TRUE}
+#Base General con el cuestionario para estudiantes
+#Codificamos los valores 99 como missing para todas las variables con rango [1-4]
+bbdd_alumnos <- bbdd_alumnos %>%
+    mutate_at(vars(4:222), na_if, 99) %>%
+    mutate_at(vars(4:222), na_if, 0)
+bbdd_alumnos <- bbdd_alumnos %>%
+    mutate_at(vars(22), na_if, 99) %>%
+    mutate_at(vars(4:222), na_if, 0)
+#Exploramos la base de datos
+skim_with(numeric = list(complete=NULL, p25=NULL, p50=NULL, p75=NULL),factor = list(complete=NULL), integer = list(complete=NULL), character = list(complete=NULL))
+skim(bbdd_alumnos) %>% pander() 
+```
+
+### BBDD Padres
+
++ Base de datos con las respuestas del cuestionario sobre CCAP para el ejercicio de la ciudadanía en estudiantes. Las categorías de 0 (vacío) y 99 (doble marca) se recodifican como missing. Se debe tener precaución con el mes y año de nacimiento del padre/madre pues presentan inconsistencia en los datos, además no hay una variable disponible que de cuenta de la edad del padre/madres. 
+
+
+```{r padres, echo=TRUE, eval=TRUE}
+#Base General con el cuestionario para padres
+#Codificamos los valores 99 como missing para todas las variables con rango [1-4]
+bbdd_padres <- bbdd_padres %>%
+    mutate_at(vars(4:141), na_if, 99) %>%
+    mutate_at(vars(4:141), na_if, 0)
+#Exploramos la base de datos
+skim_with(numeric = list(complete=NULL, p25=NULL, p50=NULL, p75=NULL),factor = list(complete=NULL), integer = list(complete=NULL), character = list(complete=NULL))
+skim(bbdd_padres) %>% pander()
+```
+
+## Análisis de no respuesta
+
+<div style="text-align: justify"> 
+
+Dadas las diferencias observadas en el merge entre las tres bases de datos se procede a realizar un análisis que tiene por objetivo dimensionar la no respuesta a los cuestionarios completos y a la prueba de conocimiento. Dada la codificación presentada en el apartado anterior se debe tener claro la existencia de missing (valores 0 y 99) para variables en particular, lo cual será revisado en detalle para las variables de interés del estudio. A continuación se presenta el análisis general de la no respuesta. 
+
+
+### Bases de datos independientes
 
 ```{r nr, echo=TRUE, eval=TRUE}
-#Base general
-skim(bbdd_puntajes)#1841 observaciones con missing data en la variable de interés (puntaje en la prueba)
+#Cantidad de no respuesta prueba de conocimiento
+sum(is.na(bbdd_puntajes$puntaje))
+#Cantidad de no respuesta en el cuestionario de alumnos
+sum(!complete.cases(bbdd_alumnos))
+#Cantidad de no respuesta en el cuestionario de padres 
+sum(!complete.cases(bbdd_padres))
+```
 
-#All values 99 replace with NA
-bbdd_alumnos[bbdd_alumnos=="99"] <- NA
-skim(bbdd_alumnos)
++ La no respuesta para la base `bbdd_puntajes` corresponde a **1841 observaciones**, para las cuales no hay información en los resultados de la prueba de conocimiento.
 
-#All values 99 replace with NA
-bbdd_padres[bbdd_padres=="99"] <- NA
-skim(bbdd_padres)
++ Para la base de datos `bbdd_alumnos` no se observa una falta de respuesta completa a los cuestionarios, sin embargo, todas las variables de este estudio presentan niveles de no respuesta a considerar. Dicho esto, se debe tener en cuenta que esta base de datos solo cuenta con una muestra de 8589 observaciones para los análisis.
 
-#Identificamos respuestas
++ Para el cuestionario de padres `bbdd_padres` se observa que una importante conjunto de casos perdidos estan en la pregunta referida al nivel educacional alcanzado por el respondente y su cónyuge/pareja ([BBDD Padres]). Se especula que esto se produce a raíz de la codificación de la pregunta, en que las personas indican solo una opción de nivel educacional aunque no hay información respectiva que ayude a identificar cada pregunta. Revisar con detalle esta pregunta pues es relevante su utilización.
+
+### Merge de las bases de datos
+
+```{r nr2, echo=TRUE, eval=TRUE}
+#Identificamos respuestas en ambos cuestionarios
 bbdd_alumnos$resp_al <- 1
 bbdd_padres$resp_pap <- 1
 
-#Merge con la base de estudiantes
-bbdd_missing <- merge(bbdd_puntajes, bbdd_alumnos, by="idalumno", all=TRUE, suffixes = c("",".y"))
-print(skim(bbdd_missing))
+#Merge con la base de alumnos
+bbdd_missing1 <- merge(bbdd_puntajes, bbdd_alumnos, by="idalumno", all=T, suffixes = c("",".y"))
+#Identificamos missing
+bbdd_missing1$resp_al[is.na(bbdd_missing1$puntaje) & bbdd_missing1$resp_al == 1] <- 0
+#Exploramos
+skim_with(numeric = list(complete=NULL, p25=NULL, p50=NULL, p75=NULL),factor = list(complete=NULL), integer = list(complete=NULL), character = list(complete=NULL))
+skim(as.factor(bbdd_missing1$resp_al)) %>% pander()
+#Dado del nivel de missing de la base original se obtiene la diferencia
+(1624 + 245)-1841 #Hay 28 observaciones más con los resultados en la prueba de conocimiento.
 
-#Recode gender
-bbdd_missing$sexo <- factor(bbdd_missing$sexo)
-bbdd_missing$sexo <- as.numeric(bbdd_missing$sexo)
-bbdd_missing$sexo <- rec(bbdd_missing$sexo, rec="2=1; 1=0")
-bbdd_missing$sexo <-factor(bbdd_missing$sexo, levels = c(0,1), labels = c("Hombre", "Mujer"))
+#Generamos una base de datos solo con la información disponible
+bbdd1<- merge(bbdd_puntajes, bbdd_alumnos, by="idalumno", all=F, suffixes = c("",".y"))
+bbdd1$resp_al[is.na(bbdd1$puntaje) & bbdd1$resp_al == 1] <- 0
+bbdd1 <- bbdd1[!bbdd1$resp_al == "0", ] 
 
-#Identificamos missing 
-bbdd_missing$resp_al[is.na(bbdd_missing$puntaje) & bbdd_missing$resp_al == 1] <- 0
-nresp <- glm(as.numeric(resp_al)~ sexo+alp2+alp3, data=bbdd_missing, family="binomial")
-summary(nresp)
-screenreg(nresp)
-
-#Drop missing
-
-bbdd_missing <- na.omit(bbdd_missing)
+#Realizamos el mismo ejercicio para identificar los missing con el cuestionario de padres a partir de la última base de datos generada
+bbdd_missing2 <- merge(bbdd1, bbdd_padres, by="idalumno", all=T, suffixes = c("",".y"))
+#Identificamos missing
+bbdd_missing2$resp_pap[is.na(bbdd_missing2$resp_al) & bbdd_missing2$resp_pap == 1] <- 0
+skim(as.factor(bbdd_missing2$resp_pap)) %>% pander()
 ```
 
+Al realizar el merge respectivo entre las bases `bbdd_puntajes` y `bbdd_alumnos` se observa la **pérdida de información de 1624 observaciones para los/as cuales no tenemos datos sobre la prueba de conocimiento** ni de los cuestionarios, esto se genera por defecto a la hora de unir las bases. A su vez, se observa **245 casos que aparecen con información solo en el cuestionario para estudiantes, pero no tienen un puntaje en la prueba de conocimiento**, está perdida es relevante, pues considera las variables de análisis. Por último, se estima **28 observaciones adicionales que solo tienen información en la prueba de conocimiento**. En definitiva, se pierden 1869 observaciones de las cuales 1841 corresponden por no tener información en la base de datos de puntaje y 28 por no tener información en los cuestionarios. 
 
-# Variables
+El merge de ambas bases de datos nos deja un **saldo de 8344 casos** en los que efectivamente hay información de datos con los puntajes obtenidos en la prueba de conocimiento y el cuestionario respectivo (se mantienen una base de datos solo con estos casos).
+
+Mismo ejercicio para incorporar la base de datos `bbdd_padres`. Aquí observamos la **pérdida de 2002 casos en las que no hay información disponible para el cuestionario de padres**. Nuevamente, esta información perdida se da por defecto al unir ambas bases de datos. A su vez, hay otros **428 casos para los cuales si tenemos información en el cuestionario de padres, pero no para el cuestionario de alumnos ni resultados en la prueba de conocimiento**. En definitiva, la unión de las tres bases nos dejan un **resultado de 6342 observaciones con información disponible en los tres insumos**, lo que será la base de trabajo. Por el momento solo se etiquetan las variables utilizadas en la sección de [Variables Espejo: vínculo entre padres e hijos]
+
+Finalmente, en un intento por dimensionar la no respuesta se realizan regresiones binomiales sobre no responder/responder el cuestionario con variables sociodemográficas disponibles. Lamentablemente, esto se realiza con la información disponible por lo que no hay como identificar otros antecedentes cuando no hay datos para ninguna de las bases tal como se detallo previamente. Los resultados muestran que el aumento de libros en el hogar aumenta las chances de responder el cuestionario en 1.39 veces más controlando por el sexo de los estudiantes y religión. Por otra parte, ser hombre disminuye las chances de responder el cuestionario en 0.75 veces respecto de ser mujer controlando por las otras variables. Esto podría caracterizar la no respuesta, aunque no hay suficiente información disponible para realizar un ejercicio más completo.  
+
+En la siguiente sección revisaremos las variables disponibles para proceder a su análisis descriptivo. Para este ejercicio se utilizara una base de datos consolidada con información para las tres bases de datos. En ese sentido, se asume un costo de representatividad de la muestra dada la pérdida de casos.
+
+```{r reg, echo=TRUE, eval=TRUE, results = "asis"}
+#Intento por dimensionar la no 
+#Base de datos alumnos
+nresp <- subset(bbdd_missing1, select = c(resp_al, sexo, alp2, alp3))
+nresp <- nresp[complete.cases(nresp$resp_al),]
+nresp <- glm(as.factor(resp_al)~sexo+alp2+alp3, data=nresp, family="binomial")
+#Tabla
+stargazer(nresp, title = "No respuesta cuestionario alumnos",
+           covariate.labels=c("Sexo estudiante", "Religión", "Libros en el hogar"),
+          column.labels=c("Modelo Alumnos"), type ='html', font.size = "small", align = TRUE, omit.stat=c("f", "ser"), column.sep.width = "-15pt")
+exp(0.327)
+exp(-0.289)
+```
+
+</div> 
+
+# Variables Disponibles
+
+<div style="text-align: justify"> 
+
+La siguiente sección tiene por objetivo presentar las variables analizadas por el estudio de la Agencia de la Calidad de la Educación. Dado de que no se dispone de los cuestionarios ni un libro de códigos directos, se procede a presentar las preguntas y variables con la información disponible. Finalmente se expone las principales variables que puedan ser relevantes para el proyecto de investigación. 
 
 ## Preguntas de los cuestionarios
 
-La tabla a continuación presenta una revisión más detallada para cada variable en el estudio. 
+A continuación se presentan un desgloce de todas las preguntas de los cuestionarios enfocado a identificar si se encuentra disponible en la base de datos para alumnos y padres, categorizarla según temática de estudio, descripción de la pregunta y principales atributos. Dada ciertas inconsistencias observadas en la base de datos se detallan observaciones para ciertas variables problemáticas. 
+
+</div> 
 
 ```{r base variables, echo=TRUE, eval=TRUE}
+#Despejamos el environment
+rm(bbdd_missing1, bbdd1, bbdd_missing2, nresp, nrespap)
+#Tabla con las variables del estudio
+variables <- data.frame(read_dta("bbdd/variables_alumnos.dta"))
 #Base de datos 
 variables <- variables %>% dplyr::select(identificador_ambos, bbdd_alumnos, bbdd_padres, categoria, descripcion, atributos, observacion)
 colnames(variables) <- c("Identificador", "BBDD Alumnos", "DBBDD Padres", "Temática", "Descripción", "Atributos", "Observación")
@@ -144,7 +269,11 @@ datatable(variables, rownames=FALSE, filter="top", options=list(pageLength=10, s
 
 ## Temáticas del estudio
 
-A continuación se presentan las principales temáticas del estudio para padres e hijos.
+<div style="text-align: justify"> 
+
+A continuación se presentan todas las temáticas presentes en los cuestionarios de alumnos y sus padres. Es importante mencionar que el identificador nos permite observar si es que dicha temática se encuentra disponible en ambas bases de datos o solo en una. 
+
+</div> 
 
 ```{r base temas, echo=TRUE, eval=TRUE}
 #BBDD con los temas de los cuestionarios
@@ -154,622 +283,71 @@ temas <- temas[order(temas$Temática),]
 datatable(temas, rownames=FALSE, filter="top", options=list(pageLength=20, scro11X=TRUE), style="default", class="compact")
 ```
 
+## Temás relevantes para el proyecto
+
+<div style="text-align: justify"> 
+
+A partir de las variables con información disponible en ambos cuestionarios: estudiantes y padres se considerarn como relevantes los siguientes temas de investigación para el proyecto: *interés político*, *percepción sobre la democracia*. *participación política*, *participación en organizaciones*, *atributos de un buen ciudadano*, *confianza en las instituciones* y *percepciones sobre paz y violencia*. La tabla a continuación detalla las preguntas específicas y sus atributos referidos a estos temas.  
+
+```{r temas proyecto, echo=TRUE, eval=TRUE}
+#Tabla con las temáticas relevantes para el proyecto
+proyecto <- subset(variables, select = c(1,4,5,6))
+#Filtramos por las temáticas de interés 
+proyecto <- proyecto %>%
+  filter(Identificador=="Alumno y Padres" & Temática=="Interés Político" |  Temática=="Percepciones sobre la democracia" | Temática=="Participación Política" | Temática=="Participación en organizaciones"  | Temática=="Buen Ciudadano" |  Temática=="Confianza en las instituciones"   | Temática=="Percepciones sobre paz y violencia")
+#Tabla
+proyecto <- subset(proyecto, select = c(2:4))
+datatable(proyecto, rownames=FALSE, filter="top", options=list(pageLength=20, scro11X=TRUE), style="default", class="compact")
+```
+ 
+Otras temáticas interesantes de observar y que no están consideradas en este listado y análisis son las siguientes: actitudes hacia inmigrantes y grupos étnicos, actitudes hacia la equidad de género, percepciones sobre la igualdad de oportunidades y preferencias por desigualdad. En términos de variables sociodemográficas se consideran variables relevantes para los estudiantes y sus padres. Se observan inconsistencias en las siguientes variables: 
+
++ Fecha de Nacimiento (Mes) padres: variable presenta varios valores atípicos dentro de la muestra final (239 casos con valor 999).
++ Fecha de Nacimiento (año) padres: variable presenta varios valores atípicos dentro de la muestra final (146 casos con años de nacimiento inferiores a 1900 y 125 casos con años de nacimiento superiores a los 1995).
++ Edad padres: variable no disponible en la base de datos con el cuestionario para padres.
++ Trabajo principal de los padres: Variable codificada con 0 y 1, no hay más información.
++ Nivel educacional de los padres: Variable con dos valores que identifica si el respondente o el cónyuge tiene un nivel educativo específico. Son 10 niveles educacionales (revisar una potencial recodificación).
+
+```{r sociodemograficas, echo=TRUE, eval=TRUE}
+#Tabla con las temáticas relevantes para el proyecto
+sociod <- subset(variables, select = c(1,4,5,6))
+#Filtramos por las temáticas de interés 
+sociod <- sociod %>%
+  filter(Identificador=="Padres" | Identificador=="Alumno y Padres" & Temática=="Sociodemográficos") %>%
+  filter(Temática=="Sociodemográficos")
+#Tabla
+sociod <- subset(sociod, select = c(2:4))
+datatable(sociod, rownames=FALSE, filter="top", options=list(pageLength=30, scro11X=TRUE), style="default", class="compact")
+```
+
+</div> 
 
 # Variables Espejo: vínculo entre padres e hijos
 
-A continuación se presenta un análisis correlacional exploratorio con las principales variables de estudio que se replican integramente para padres e hijos. Cabe mencionar que el análisis considera una base de datos en que los datos faltantes fueron excluídos del análisis. La siguiente sección presenta descriptivos de las variables y correlaciones policóricas. 
+A continuación se presenta la codificación y análisis descriptivo / correlacional exploratorio con las principales variables de estudio que se replican integramente en los cuestionarios para padres e hijos. Cabe mencionar que el análisis considera una base de datos con 6243 observaciones correspondiente a los datos disponibles, aunque es posible observar mayor cantidad de missing dada la respuesta en blanco de algunas variables. 
+
+```{r merge, echo=TRUE, eval=TRUE, results = "asis"}
+#Despejamos el environment
+rm(proyecto, sociod, temas, variables)
+#Generamos una base de datos solo con la información disponible: 6342 observaciones
+bbdd<- merge(bbdd_puntajes, bbdd_alumnos, by="idalumno", all=F, suffixes = c("",".y"))
+bbdd$resp_al[is.na(bbdd$puntaje) & bbdd$resp_al == 1] <- 0
+bbdd <- bbdd[!bbdd$resp_al == "0", ] 
+#Agregamos la segunda base
+bbdd <- merge(bbdd, bbdd_padres, by="idalumno", all=F, suffixes = c("",".y"))
+bbdd$resp_pap[is.na(bbdd$resp_al) & bbdd$resp_pap == 1] <- 0
+bbdd <- bbdd[!bbdd$resp_pap == "0", ] 
+```
 
 ## Interés Político
 
-Categorías: 
+**Pregunta**: Cuánto te interesas por temas políticas y sociales
+
+Categorías de respuesta: 
 
 1. Nada
 2. Poco
 3. Bastante
 4. Mucho
-
-```{r interes pol, echo=TRUE, eval=TRUE}
-#Objeto con las variables de interés:
-#Participación e interés político
-intpolit <- bbdd %>% 
-  select(alp16, pap17)
-#Recodificamos missing
-intpolit[intpolit == "1"] <- 1
-intpolit[intpolit == "2"] <- 2
-intpolit[intpolit == "3"] <- 3
-intpolit[intpolit == "4"] <- 4
-intpolit[intpolit == "99"] <- NA
-intpolit[intpolit == "0"] <- NA
-#Etiqueta para cada variable
-Hmisc::label(intpolit$alp16) <- "Interes Político (Hijos)"
-Hmisc::label(intpolit$pap17) <- "Interes Político (Padres)"
-
-#Descriptivos
-Hmisc::describe(intpolit)
-#Histogram
-intpolit %>%
-  keep(is.numeric) %>% 
-  gather() %>% 
-  ggplot(aes(value)) +
-    facet_wrap(~ key, scales = "free", ncol=2) +
-    geom_histogram(binwidth=1,colour="white") 
-
-#Correlaciones policóricas
-polychoric(intpolit)
-
-```
-
-## Percepción sobre la democracia
-
-Nivel de acuerdo: 
-
-1. Muy en desacuerdo 
-2. En desacuerdo 
-3. De acuerdo
-4. Muy de acuerdo
-
-```{r democracia, echo=TRUE, eval=TRUE}
-#Percepción sobre la democracia
-democracia <- bbdd %>% dplyr::select(alp28_1, pap19_1,
-alp28_2, pap19_4,
-alp28_3, pap19_2,
-alp28_4, pap19_5,
-alp28_5, pap19_3,
-alp28_6, pap19_6,
-alp28_7, pap19_7)
-#Recodificamos missing
-democracia[democracia == "1"] <- 1
-democracia[democracia == "2"] <- 2
-democracia[democracia == "3"] <- 3
-democracia[democracia == "4"] <- 4
-democracia[democracia == "99"] <- NA
-democracia[democracia == "0"] <- NA
-#Nombre variables
-names(democracia)[1]<- "Democracia mejor forma de gobierno(Hijos)"
-names(democracia)[2]<- "Democracia mejor forma de gobierno(Padres)"
-names(democracia)[3]<- "Dictaduras se justifican por beneficios económicos(Hijos)"
-names(democracia)[4]<- "Dictaduras se justifican por beneficios económicos(Padres)"
-names(democracia)[5]<- "Garantizar la libertad de expresión(Hijos)"
-names(democracia)[6]<- "Garantizar la libertad de expresión(Padres)"
-names(democracia)[7]<- "Concentración del poder en una sola persona(Hijos)"
-names(democracia)[8]<- "Concentración del poder en una sola persona(Padres)"
-names(democracia)[9]<- "Democracias fomentan igualdad entre las personas(Hijos)"
-names(democracia)[10]<- "Democracias fomentan igualdad entre las personas(Padres)"
-names(democracia)[11]<- "Gob.cerrar los medios de comunicación que lo critiquen(Hijos)"
-names(democracia)[12]<- "Gob.cerrar los medios de comunicación que lo critiquen(Padres)"
-names(democracia)[13]<- "Presidente no está de acuerdo con el Congreso debería disolverlo(Hijos)"
-names(democracia)[14]<- "Presidente no está de acuerdo con el Congreso debería disolverlo(Padres)"
-
-#Descriptivos
-Hmisc::describe(democracia)
-#Histogram
-democracia %>% select(1:4) %>% 
-  keep(is.numeric) %>% 
-  gather() %>% 
-  ggplot(aes(value)) +
-    facet_wrap(~ key, scales = "free", ncol=2) +
-    geom_histogram(binwidth=1,colour="white") 
-
-democracia %>% select(5:8) %>% 
-  keep(is.numeric) %>% 
-  gather() %>% 
-  ggplot(aes(value)) +
-    facet_wrap(~ key, scales = "free", ncol=2) +
-    geom_histogram(binwidth=1,colour="white") 
-
-democracia %>% select(9:12) %>% 
-  keep(is.numeric) %>% 
-  gather() %>% 
-  ggplot(aes(value)) +
-    facet_wrap(~ key, scales = "free", ncol=2) +
-    geom_histogram(binwidth=1,colour="white") 
-
-democracia %>% select(13:14) %>% 
-  keep(is.numeric) %>% 
-  gather() %>% 
-  ggplot(aes(value)) +
-    facet_wrap(~ key, scales = "free", ncol=2) +
-    geom_histogram(binwidth=1,colour="white") 
-
-#Correlaciones policóricas
-polychoric(democracia[1:2])
-polychoric(democracia[3:4])
-polychoric(democracia[5:6])
-polychoric(democracia[7:8])
-polychoric(democracia[9:10])
-polychoric(democracia[11:12])
-polychoric(democracia[13:14])
-
-```
-
-## Confianza en las instituciones
-
-+ Nivel de confianza: 
-
-1. Nada o muy poco
-2. Algo
-3. Bastante
-4. Mucho
-
-```{r confianza, echo=TRUE, eval=TRUE}
-#Confianza en las instituciones
-confianza <- bbdd %>% dplyr::select(alp27_1, pap21_1,
-alp27_2, pap21_2,
-alp27_3, pap21_3,
-alp27_4, pap21_4,
-alp27_5, pap21_5,
-alp27_6, pap21_6,
-alp27_7, pap21_7,
-alp27_8, pap21_8,
-alp27_9, pap21_9,
-alp27_10, pap21_10,
-alp27_11, pap21_11,
-alp27_12, pap21_12,
-alp27_13, pap21_13)
-#Recodificamos missing
-confianza[confianza == "1"] <- 1
-confianza[confianza == "2"] <- 2
-confianza[confianza == "3"] <- 3
-confianza[confianza == "4"] <- 4
-confianza[confianza == "99"] <- NA
-confianza[confianza  == "0"] <- NA
-#Nombre variables
-names(confianza)[1]<- "Congreso Nacional (Hijos)"
-names(confianza)[2]<- "Congreso Nacional (Padres)"
-names(confianza)[3]<- "Tribunales de Justicia (Hijos)"
-names(confianza)[4]<- "Tribunales de Justicia (Padres)"
-names(confianza)[5]<- "Gobierno (Hijos)"
-names(confianza)[6]<- "Gobierno (Padres)"
-names(confianza)[7]<- "Partidos políticos (Hijos)"
-names(confianza)[8]<- "Partidos políticos (Padres)"
-names(confianza)[9]<- "Bancos (Hijos)"
-names(confianza)[10]<- "Bancos (Padres)"
-names(confianza)[11]<- "Empresas privadas (Hijos)"
-names(confianza)[12]<- "Empresas privadas (Padres)"
-names(confianza)[13]<- "Carabineros (Hijos)"
-names(confianza)[14]<- "Carabineros (Padres)"
-names(confianza)[15]<- "Fuerzas Armadas (Hijos)"
-names(confianza)[16]<- "Fuerzas Armadas (Padres)"
-names(confianza)[17]<- "Sindicatos (Hijos)"
-names(confianza)[18]<- "Sindicatos (Padres)"
-names(confianza)[19]<- "Radios (Hijos)"
-names(confianza)[20]<- "Radios (Padres)"
-names(confianza)[21]<- "Televisión (Hijos)"
-names(confianza)[22]<- "Televisión (Padres)"
-names(confianza)[23]<- "Diarios (Hijos)"
-names(confianza)[24]<- "Diarios (Padres)"
-names(confianza)[25]<- "RRSS (Hijos)"
-names(confianza)[26]<- "RRSS (Padres)"
-
-#Descriptivos
-Hmisc::describe(confianza)
-#Histogram
-confianza %>% select(1:6) %>% 
-  keep(is.numeric) %>% 
-  gather() %>% 
-  ggplot(aes(value)) +
-    facet_wrap(~ key, scales = "free", ncol=2) +
-    geom_histogram(binwidth=1,colour="white") 
-
-confianza %>% select(7:12) %>% 
-  keep(is.numeric) %>% 
-  gather() %>% 
-  ggplot(aes(value)) +
-    facet_wrap(~ key, scales = "free", ncol=2) +
-    geom_histogram(binwidth=1,colour="white") 
-
-confianza %>% select(13:18) %>% 
-  keep(is.numeric) %>% 
-  gather() %>% 
-  ggplot(aes(value)) +
-    facet_wrap(~ key, scales = "free", ncol=2) +
-    geom_histogram(binwidth=1,colour="white") 
-
-confianza %>% select(19:26) %>% 
-  keep(is.numeric) %>% 
-  gather() %>% 
-  ggplot(aes(value)) +
-    facet_wrap(~ key, scales = "free", ncol=2) +
-    geom_histogram(binwidth=1,colour="white") 
-
-
-#Correlaciones policóricas
-polychoric(confianza[1:4])
-polychoric(confianza[5:8])
-polychoric(confianza[9:12])
-polychoric(confianza[13:16])
-polychoric(confianza[17:20])
-polychoric(confianza[21:24])
-polychoric(confianza[25:26])
-
-```
-
-## Participación
-
-Categorías: 
-
-1. No, nunca he hecho esto
-2. Sí, dentro de los últimos tres años
-3. Sí, dentro de los últimos doce meses
-
-```{r part pol, echo=TRUE, eval=TRUE}
-#Objeto con las variables de interés:
-polit <- bbdd %>% 
-  select(alp17_1, pap13_1,
-         alp17_2, pap13_2,
-         alp17_3, pap13_3, 
-         alp17_4, pap13_4, 
-         alp17_5, pap13_5,
-         alp17_6, pap13_6, 
-         alp17_7, pap13_7,
-         alp17_8, pap13_8,
-         alp17_9, pap13_9,
-         alp17_10, pap13_10)
-#Recodificamos missing
-polit[polit == "1"] <- 1
-polit[polit == "2"] <- 2
-polit[polit == "3"] <- 3
-polit[polit == "4"] <- 4
-polit[polit == "99"] <- NA
-polit[polit == "0"] <- NA
-#Etiqueta para cada variable
-Hmisc::label(polit$alp17_1) <- "Firmar una petición (Hijos)"
-Hmisc::label(polit$pap13_1) <- "Firmar una petición (Padres)"
-Hmisc::label(polit$alp17_2) <- "Asistir a una marcha (Hijos)"
-Hmisc::label(polit$pap13_2) <- "Asistir a una marcha (Padres)"
-Hmisc::label(polit$alp17_3) <- "Donar dinero para una act. pol. (Hijos)"
-Hmisc::label(polit$pap13_3) <- "Donar dinero para una act. pol. (Padres)"
-Hmisc::label(polit$alp17_4) <- "Figurar en los medios (Hijos)"
-Hmisc::label(polit$pap13_4) <- "Figurar en los medios (Padres)"
-Hmisc::label(polit$alp17_5) <- "Participar en una huelga (Hijos)"
-Hmisc::label(polit$pap13_5) <- "Participar en una huelga (Padres)"
-Hmisc::label(polit$alp17_6) <- "Trabajar en una campaña electoral (Hijos)"
-Hmisc::label(polit$pap13_6) <- "Trabajar en una campaña electoral (Padres)"
-Hmisc::label(polit$alp17_7) <- "RRSS para expresar opinión (Hijos)"
-Hmisc::label(polit$pap13_7) <- "RRSS para expresar opinión  (Padres)"
-Hmisc::label(polit$alp17_8) <- "Convencer a otros por un partido/candidato (Hijos)"
-Hmisc::label(polit$pap13_8) <- "Convencer a otros por un partido/candidato (Padres)"
-Hmisc::label(polit$alp17_9) <- "Toma de recintos (Hijos)"
-Hmisc::label(polit$pap13_9) <- "Toma de recintos (Padres)"
-Hmisc::label(polit$alp17_10) <- "Bloqueo de calles o carreteras (Hijos)"
-Hmisc::label(polit$pap13_10) <- "Bloqueo de calles o carreteras (Padres)"
-
-names(polit)[1]<- "Firmar una petición(Hijos)"
-names(polit)[2]<- "Firmar una petición(Padres)"
-names(polit)[3]<- "Asistir a una marcha(Hijos)"
-names(polit)[4]<- "Asistir a una marcha(Padres)"
-names(polit)[5]<- "Donar para una act. pol.(Hijos)"
-names(polit)[6]<- "Donar para una act. pol.(Padres)"
-names(polit)[7]<- "Figurar en los medios(Hijos)"
-names(polit)[8]<- "Figurar en los medios(Padres)"
-names(polit)[9]<- "Participar en una huelga(Hijos)"
-names(polit)[10]<- "Participar en una huelga(Padres)"
-names(polit)[11]<- "Trabajar en una campaña(Hijos)"
-names(polit)[12]<- "Trabajar en una campaña(Padres)"
-names(polit)[13]<- "Usar RRSS para opinar(Hijos)"
-names(polit)[14]<- "Usar RRSS para opinar(Padres)"
-names(polit)[15]<- "Convencer a otros: partido(Hijos)"
-names(polit)[16]<- "Convencer a otros: partido(Padres)"
-names(polit)[17]<- "Toma de recintos(Hijos)"
-names(polit)[18]<- "Toma de recintos(Padres)"
-names(polit)[19]<- "Bloqueo de calles/carreteras(Hijos)"
-names(polit)[20]<- "Bloqueo de calles/carreteras(Padres)"
-
-#Descriptivos
-Hmisc::describe(polit)
-#Histogram
-polit %>% select(1:6) %>% 
-  keep(is.numeric) %>% 
-  gather() %>% 
-  ggplot(aes(value)) +
-    facet_wrap(~ key, scales = "free", ncol=2) +
-    geom_histogram(binwidth=1,colour="white") 
-
-polit %>% select(7:12) %>% 
-  keep(is.numeric) %>% 
-  gather() %>% 
-  ggplot(aes(value)) +
-    facet_wrap(~ key, scales = "free", ncol=2) +
-    geom_histogram(binwidth=1,colour="white") 
-
-polit %>% select(13:16) %>% 
-  keep(is.numeric) %>% 
-  gather() %>% 
-  ggplot(aes(value)) +
-    facet_wrap(~ key, scales = "free", ncol=2) +
-    geom_histogram(binwidth=1,colour="white") 
-
-polit %>% select(17:20) %>% 
-  keep(is.numeric) %>% 
-  gather() %>% 
-  ggplot(aes(value)) +
-    facet_wrap(~ key, scales = "free", ncol=2) +
-    geom_histogram(binwidth=1,colour="white") 
-
-#Correlaciones policóricas
-polychoric(polit[1:2])
-polychoric(polit[3:4])
-polychoric(polit[5:6])
-polychoric(polit[7:8])
-polychoric(polit[9:10])
-polychoric(polit[11:12])
-polychoric(polit[13:14])
-polychoric(polit[15:16])
-polychoric(polit[17:18])
-polychoric(polit[19:20])
-
-```
-
-## Definición Buen ciudadano
-
-+ Nivel de importancia 
-
-1. Sin ninguna importancia
-2. No muy importante
-3. Importante
-4. Muy importante
-
-```{r ciudadano, echo=TRUE, eval=TRUE}
-#Definición Buen ciudadano
-buen_ciudadano<- bbdd %>% dplyr::select(alp36_1, pap18_1,
-alp36_2, pap18_2,
-alp36_3, pap18_3,
-alp36_4, pap18_4,
-alp36_5, pap18_5,
-alp36_6, pap18_6,
-alp36_7, pap18_7,
-alp36_8, pap18_8,
-alp36_9, pap18_9,
-alp36_10, pap18_10,
-alp36_11, pap18_11,
-alp36_12, pap18_12,
-alp36_13, pap18_13,
-alp36_14, pap18_14,
-alp36_15, pap18_15,
-alp36_16, pap18_16,
-alp36_17, pap18_17)
-#Recodificamos missing
-buen_ciudadano[buen_ciudadano == "1"] <- 1
-buen_ciudadano[buen_ciudadano == "2"] <- 2
-buen_ciudadano[buen_ciudadano == "3"] <- 3
-buen_ciudadano[buen_ciudadano == "4"] <- 4
-buen_ciudadano[buen_ciudadano == "99"] <- NA
-buen_ciudadano[buen_ciudadano  == "0"] <- NA
-
-#Nombre variables
-names(buen_ciudadano)[1]<- "Votar en todas las elecciones(Hijos)"
-names(buen_ciudadano)[2]<- "Votar en todas las elecciones(Padres)"
-names(buen_ciudadano)[3]<- "Unirse a un partido político(Hijos)"
-names(buen_ciudadano)[4]<- "Unirse a un partido político(Padres)"
-names(buen_ciudadano)[5]<- "Aprender de la historia del país(Hijos)"
-names(buen_ciudadano)[6]<- "Aprender de la historia del país(Padres)"
-names(buen_ciudadano)[7]<- "Estar informado sobre temas políticos(Hijos)"
-names(buen_ciudadano)[8]<- "Estar informado sobre temas políticos(Padres)"
-names(buen_ciudadano)[9]<- "Respeto por los representantes del Estado(Hijos)"
-names(buen_ciudadano)[10]<- "Respeto por los representantes del Estado(Padres)"
-names(buen_ciudadano)[11]<- "Involucrarse en discusiones políticas(Hijos)"
-names(buen_ciudadano)[12]<- "Involucrarse en discusiones políticas(Padres)"
-names(buen_ciudadano)[13]<- "Participar en protestas pacíficas(Hijos)"
-names(buen_ciudadano)[14]<- "Participar en protestas pacíficas(Padres)"
-names(buen_ciudadano)[15]<- "Participar en actividades para beneficiar a la comunidad(Hijos)"
-names(buen_ciudadano)[16]<- "Participar en actividades para beneficiar a la comunidad(Padres)"
-names(buen_ciudadano)[17]<- "Participar en promover derechos humanos(Hijos)"
-names(buen_ciudadano)[18]<- "Participar en promover derechos humanos(Padres)"
-names(buen_ciudadano)[19]<- "Participar en la protección del medio ambiente(Hijos)"
-names(buen_ciudadano)[20]<- "Participar en la protección del medio ambiente(Padres)"
-names(buen_ciudadano)[21]<- "Trabajar arduamente(Hijos)"
-names(buen_ciudadano)[22]<- "Trabajar arduamente(Padres)"
-names(buen_ciudadano)[23]<- "Obedecer siempre la ley(Hijos)"
-names(buen_ciudadano)[24]<- "Obedecer siempre la ley(Padres)"
-names(buen_ciudadano)[25]<- "Asegurar el bienestar económico de sus familias(Hijos)"
-names(buen_ciudadano)[26]<- "Asegurar el bienestar económico de sus familias(Padres)"
-names(buen_ciudadano)[27]<- "Hacer esfuerzos por proteger recursos naturales(Hijos)"
-names(buen_ciudadano)[28]<- "Hacer esfuerzos por proteger recursos naturales(Padres)"
-names(buen_ciudadano)[29]<- "Respetar a los otros a tener sus propias opiniones(Hijos)"
-names(buen_ciudadano)[30]<- "Respetar a los otros a tener sus propias opiniones(Padres)"
-names(buen_ciudadano)[31]<- "Apoyar a quienes están peor que uno(Hijos)"
-names(buen_ciudadano)[32]<- "Apoyar a quienes están peor que uno(Padres)"
-names(buen_ciudadano)[33]<- "Involucrarse en ayudar a países menos desarrollados(Hijos)"
-names(buen_ciudadano)[34]<- "Involucrarse en ayudar a países menos desarrollados(Padres)"
-
-#Descriptivos
-Hmisc::describe(buen_ciudadano)
-#Histogram
-buen_ciudadano %>% select(1:6) %>% 
-  keep(is.numeric) %>% 
-  gather() %>% 
-  ggplot(aes(value)) +
-    facet_wrap(~ key, scales = "free", ncol=2) +
-    geom_histogram(binwidth=1,colour="white") 
-
-buen_ciudadano %>% select(7:12) %>% 
-  keep(is.numeric) %>% 
-  gather() %>% 
-  ggplot(aes(value)) +
-    facet_wrap(~ key, scales = "free", ncol=2) +
-    geom_histogram(binwidth=1,colour="white") 
-
-buen_ciudadano %>% select(13:18) %>% 
-  keep(is.numeric) %>% 
-  gather() %>% 
-  ggplot(aes(value)) +
-    facet_wrap(~ key, scales = "free", ncol=2) +
-    geom_histogram(binwidth=1,colour="white") 
-
-buen_ciudadano %>% select(19:24) %>% 
-  keep(is.numeric) %>% 
-  gather() %>% 
-  ggplot(aes(value)) +
-    facet_wrap(~ key, scales = "free", ncol=2) +
-    geom_histogram(binwidth=1,colour="white") 
-
-buen_ciudadano %>% select(25:30) %>% 
-  keep(is.numeric) %>% 
-  gather() %>% 
-  ggplot(aes(value)) +
-    facet_wrap(~ key, scales = "free", ncol=2) +
-    geom_histogram(binwidth=1,colour="white") 
-
-buen_ciudadano %>% select(31:34) %>% 
-  keep(is.numeric) %>% 
-  gather() %>% 
-  ggplot(aes(value)) +
-    facet_wrap(~ key, scales = "free", ncol=2) +
-    geom_histogram(binwidth=1,colour="white") 
-
-#Correlaciones policóricas
-polychoric(buen_ciudadano[1:2])
-polychoric(buen_ciudadano[3:4])
-polychoric(buen_ciudadano[5:6])
-polychoric(buen_ciudadano[7:8])
-polychoric(buen_ciudadano[9:10])
-polychoric(buen_ciudadano[11:12])
-polychoric(buen_ciudadano[13:14])
-polychoric(buen_ciudadano[15:16])
-polychoric(buen_ciudadano[17:18])
-polychoric(buen_ciudadano[19:20])
-polychoric(buen_ciudadano[21:22])
-polychoric(buen_ciudadano[23:24])
-polychoric(buen_ciudadano[25:26])
-polychoric(buen_ciudadano[27:28])
-polychoric(buen_ciudadano[29:30])
-polychoric(buen_ciudadano[31:32])
-polychoric(buen_ciudadano[33:34])
-
-```
-
-
-## Percepción de Desigualdad
-
-+ Nivel de acuerdo 
-
-1. Muy en desacuerdo
-2. En desacuerdo
-3. De acuerdo
-4. Muy de acuerdo
-
-```{r desigualdad, echo=TRUE, eval=TRUE}
-#Percepciones sobre Desigualdad
-desigualdad <- bbdd %>% dplyr::select(alp38_1, pap25_1,
-alp38_2, pap25_2,
-alp38_3, pap25_3,
-alp38_4, pap25_4,
-alp38_5, pap25_5,
-alp39_1, pap26_1,
-alp39_2, pap26_2,
-alp39_3, pap26_3,
-alp39_4, pap26_4)
-#Recodificamos missing
-desigualdad[desigualdad == "1"] <- 1
-desigualdad[desigualdad == "2"] <- 2
-desigualdad[desigualdad == "3"] <- 3
-desigualdad[desigualdad == "4"] <- 4
-desigualdad[desigualdad == "99"] <- NA
-desigualdad[desigualdad  == "0"] <- NA
-#Nombre variables
-names(desigualdad)[1]<- "Hay igualdad de oportunidades(Hijos)"
-names(desigualdad)[2]<- "Hay igualdad de oportunidades(Padres)"
-names(desigualdad)[3]<- "Recompensadas por sus esfuerzos(Hijos)"
-names(desigualdad)[4]<- "Recompensadas por sus esfuerzos(Padres)"
-names(desigualdad)[5]<- "Obtienen lo que merecen(Hijos)"
-names(desigualdad)[6]<- "Obtienen lo que merecen(Padres)"
-names(desigualdad)[7]<- "Recompensadas por su inteligencia(Hijos)"
-names(desigualdad)[8]<- "Recompensadas por su inteligencia(Padres)"
-names(desigualdad)[9]<- "Diferencias de ingreso son demasiado grandes(Hijos)"
-names(desigualdad)[10]<- "Diferencias de ingreso son demasiado grandes(Padres)"
-names(desigualdad)[11]<- "Es justo mayores ingresos, mejores pensiones(Hijos)"
-names(desigualdad)[12]<- "Es justo mayores ingresos, mejores pensiones(Padres)"
-names(desigualdad)[13]<- "Es justo pagar por mejor educación(Hijos)"
-names(desigualdad)[14]<- "Es justo pagar por mejor educación(Padres)"
-names(desigualdad)[15]<- "Es justo mayores ingresos, mejor salud(Hijos)"
-names(desigualdad)[16]<- "Es justo mayores ingresos, mejor salud(Padres)"
-names(desigualdad)[17]<- "Gobierno debería reducir las diferencias de ingreso(Hijos)"
-names(desigualdad)[18]<- "Gobierno debería reducir las diferencias de ingreso(Padres)"
-
-#Descriptivos
-Hmisc::describe(desigualdad)
-#Histogram
-desigualdad %>% select(1:6) %>% 
-  keep(is.numeric) %>% 
-  gather() %>% 
-  ggplot(aes(value)) +
-    facet_wrap(~ key, scales = "free", ncol=2) +
-    geom_histogram(binwidth=1,colour="white") 
-
-desigualdad %>% select(7:12) %>% 
-  keep(is.numeric) %>% 
-  gather() %>% 
-  ggplot(aes(value)) +
-    facet_wrap(~ key, scales = "free", ncol=2) +
-    geom_histogram(binwidth=1,colour="white") 
-
-desigualdad %>% select(13:18) %>% 
-  keep(is.numeric) %>% 
-  gather() %>% 
-  ggplot(aes(value)) +
-    facet_wrap(~ key, scales = "free", ncol=2) +
-    geom_histogram(binwidth=1,colour="white") 
-
-#Correlaciones policóricas
-polychoric(desigualdad[1:4])
-polychoric(desigualdad[5:8])
-polychoric(desigualdad[9:12])
-polychoric(desigualdad[13:16])
-polychoric(desigualdad[17:18])
-
-```
-
-## Perpceciones sobre paz y violencia
-
-+ Nivel de acuerdo 
-
-1. Muy en desacuerdo
-2. En desacuerdo
-3. De acuerdo
-4. Muy de acuerdo
-
-```{r paz, echo=TRUE, eval=TRUE}
-#Percepciones sobre Desigualdad
-paz<- bbdd %>% dplyr::select(alp40_1, pap28_1,
-alp40_2, pap28_2,
-alp40_3, pap28_3,
-alp40_4, pap28_4)
-#Recodificamos missing
-paz[paz == "1"] <- 1
-paz[paz == "2"] <- 2
-paz[paz == "3"] <- 3
-paz[paz == "4"] <- 4
-paz[paz == "99"] <- NA
-paz[paz  == "0"] <- NA
-#Nombre variables
-names(paz)[1]<- "Paz a través del diálogo(Hijo)"
-names(paz)[2]<- "Paz a través del diálogo(Padres)"
-names(paz)[3]<- "Para la paz el fin justifica los medios(Hijo)"
-names(paz)[4]<- "Para la paz el fin justifica los medios(Padres)"
-names(paz)[5]<- "Ciudadanos castigan criminales(Hijos)"
-names(paz)[6]<- "Ciudadanos castigan criminales(Padres)"
-names(paz)[7]<- "Violencia para lograr metas(Hijos)"
-names(paz)[8]<- "Violencia para lograr metas(Padres)"
-
-#Descriptivos
-Hmisc::describe(paz)
-#Histogram
-paz %>% select(1:8) %>% 
-  keep(is.numeric) %>% 
-  gather() %>% 
-  ggplot(aes(value)) +
-    facet_wrap(~ key, scales = "free", ncol=2) +
-    geom_histogram(binwidth=1,colour="white") 
-
-#Correlaciones policóricas
-polychoric(paz[1:2])
-polychoric(paz[3:4])
-polychoric(paz[5:6])
-polychoric(paz[7:8])
-
-```
-
-
-
 
 
