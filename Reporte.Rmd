@@ -52,6 +52,8 @@ library(skimr)
 library(sjmisc)
 library(dplyr)
 library(stargazer)
+library(sjPlot)
+library(ggpubr)
 
 #Global
 options(max.print = "500")
@@ -65,6 +67,10 @@ opts_chunk$set(echo = FALSE,
 opts_knit$set(width = 500)
 options(max.print=1000000)
 ```
+
+
+---
+
 
 # Calidad bases de datos
 
@@ -106,6 +112,8 @@ Se realiza un merge con las tres bases de datos anteriores consolidando todo en 
 A pesar de que la unión de estas tres bases de datos arroja una base general `bbdd` con **10.213** observaciones, se debe considerar que hay **3.443** casos para los que no tenemos información completa disponible en  alguna de las tres bases de datos anteriores. A partir A continuación se realiza una aproximación exploratoria para las variables existentes en cada una de las tres bases de datos. En la siguiente sección se realizará un análisis más detallado de estos casos pérdidos. 
 
 </div> 
+
+---
 
 ## Exploración bases de datos
 
@@ -163,6 +171,8 @@ bbdd_padres <- bbdd_padres %>%
 skim_with(numeric = list(complete=NULL, p25=NULL, p50=NULL, p75=NULL),factor = list(complete=NULL), integer = list(complete=NULL), character = list(complete=NULL))
 skim(bbdd_padres) %>% pander()
 ```
+
+---
 
 ## Análisis de no respuesta
 
@@ -225,7 +235,7 @@ Mismo ejercicio para incorporar la base de datos `bbdd_padres`. Aquí observamos
 
 Finalmente, en un intento por dimensionar la no respuesta se realizan regresiones binomiales sobre no responder/responder el cuestionario con variables sociodemográficas disponibles. Lamentablemente, esto se realiza con la información disponible por lo que no hay como identificar otros antecedentes cuando no hay datos para ninguna de las bases tal como se detallo previamente. Los resultados muestran que el aumento de libros en el hogar aumenta las chances de responder el cuestionario en 1.39 veces más controlando por el sexo de los estudiantes y religión. Por otra parte, ser hombre disminuye las chances de responder el cuestionario en 0.75 veces respecto de ser mujer controlando por las otras variables. Esto podría caracterizar la no respuesta, aunque no hay suficiente información disponible para realizar un ejercicio más completo.  
 
-En la siguiente sección revisaremos las variables disponibles para proceder a su análisis descriptivo. Para este ejercicio se utilizara una base de datos consolidada con información para las tres bases de datos. En ese sentido, se asume un costo de representatividad de la muestra dada la pérdida de casos.
+En la siguiente sección revisaremos las variables disponibles para proceder a su análisis descriptivo. Para este ejercicio se utilizara una base de datos consolidada con información para las tres bases de datos. En ese sentido, se asume el costo de representatividad de la muestra dada la pérdida de casos.
 
 ```{r reg, echo=TRUE, eval=TRUE, results = "asis"}
 #Intento por dimensionar la no 
@@ -242,6 +252,10 @@ exp(-0.289)
 ```
 
 </div> 
+
+
+---
+
 
 # Variables Disponibles
 
@@ -267,6 +281,8 @@ variables <- variables[order(variables$Temática),]
 datatable(variables, rownames=FALSE, filter="top", options=list(pageLength=10, scro11X=TRUE), style="default", class="compact")
 ```
 
+---
+
 ## Temáticas del estudio
 
 <div style="text-align: justify"> 
@@ -283,6 +299,8 @@ temas <- temas[order(temas$Temática),]
 datatable(temas, rownames=FALSE, filter="top", options=list(pageLength=20, scro11X=TRUE), style="default", class="compact")
 ```
 
+---
+
 ## Temás relevantes para el proyecto
 
 <div style="text-align: justify"> 
@@ -294,19 +312,21 @@ A partir de las variables con información disponible en ambos cuestionarios: es
 proyecto <- subset(variables, select = c(1,4,5,6))
 #Filtramos por las temáticas de interés 
 proyecto <- proyecto %>%
-  filter(Identificador=="Alumno y Padres" & Temática=="Interés Político" |  Temática=="Percepciones sobre la democracia" | Temática=="Participación Política" | Temática=="Participación en organizaciones"  | Temática=="Buen Ciudadano" |  Temática=="Confianza en las instituciones"   | Temática=="Percepciones sobre paz y violencia")
+  filter(Identificador=="Alumno y Padres" & Temática=="Interés Político" |  Temática=="Percepciones sobre la democracia" | Temática=="Participación Política" | Temática=="Participación en organizaciones"  | Temática=="Buen Ciudadano" |  Temática=="Confianza en las instituciones"   | Temática=="Percepciones sobre paz y violencia" | Temática=="Clima escolar")
 #Tabla
 proyecto <- subset(proyecto, select = c(2:4))
 datatable(proyecto, rownames=FALSE, filter="top", options=list(pageLength=20, scro11X=TRUE), style="default", class="compact")
 ```
  
-Otras temáticas interesantes de observar y que no están consideradas en este listado y análisis son las siguientes: actitudes hacia inmigrantes y grupos étnicos, actitudes hacia la equidad de género, percepciones sobre la igualdad de oportunidades y preferencias por desigualdad. En términos de variables sociodemográficas se consideran variables relevantes para los estudiantes y sus padres. Se observan inconsistencias en las siguientes variables: 
+Otras temáticas interesantes de observar y que no están consideradas en este listado y análisis son las siguientes: actitudes hacia inmigrantes y grupos étnicos, actitudes hacia la equidad de género, percepciones sobre la igualdad de oportunidades y preferencias por desigualdad. En términos de variables sociodemográficas se consideran variables relevantes para los estudiantes y sus padres. Finalmente, en temas de clima escolar se observan 10 indicadores diversos. A su vez, se evidencian inconsistencias en las siguientes variables:
 
-+ Fecha de Nacimiento (Mes) padres: variable presenta varios valores atípicos dentro de la muestra final (239 casos con valor 999).
-+ Fecha de Nacimiento (año) padres: variable presenta varios valores atípicos dentro de la muestra final (146 casos con años de nacimiento inferiores a 1900 y 125 casos con años de nacimiento superiores a los 1995).
-+ Edad padres: variable no disponible en la base de datos con el cuestionario para padres.
-+ Trabajo principal de los padres: Variable codificada con 0 y 1, no hay más información.
-+ Nivel educacional de los padres: Variable con dos valores que identifica si el respondente o el cónyuge tiene un nivel educativo específico. Son 10 niveles educacionales (revisar una potencial recodificación).
+
++ **Fecha de Nacimiento (mes) padres:** variable presenta varios valores atípicos dentro de la muestra final (239 casos con valor 999).
++ **Fecha de Nacimiento (año) padres:** variable presenta varios valores atípicos dentro de la muestra final (146 casos con años de nacimiento inferiores a 1900 y 125 casos con años de nacimiento superiores a los 1995).
++ **Edad padres:** variable no disponible en la base de datos con el cuestionario para padres.
++ **Trabajo principal de los padres:** Variable codificada con 0 y 1, no hay más información.
++ **Nivel educacional de los padres:** Variable con dos valores que identifica si el respondente o el cónyuge tiene un nivel educativo específico. Son 10 niveles educacionales (revisar una potencial recodificación).
+
 
 ```{r sociodemograficas, echo=TRUE, eval=TRUE}
 #Tabla con las temáticas relevantes para el proyecto
@@ -319,12 +339,6 @@ sociod <- sociod %>%
 sociod <- subset(sociod, select = c(2:4))
 datatable(sociod, rownames=FALSE, filter="top", options=list(pageLength=30, scro11X=TRUE), style="default", class="compact")
 ```
-
-</div> 
-
-# Variables Espejo: vínculo entre padres e hijos
-
-A continuación se presenta la codificación y análisis descriptivo / correlacional exploratorio con las principales variables de estudio que se replican integramente en los cuestionarios para padres e hijos. Cabe mencionar que el análisis considera una base de datos con 6243 observaciones correspondiente a los datos disponibles, aunque es posible observar mayor cantidad de missing dada la respuesta en blanco de algunas variables. 
 
 ```{r merge, echo=TRUE, eval=TRUE, results = "asis"}
 #Despejamos el environment
@@ -339,15 +353,659 @@ bbdd$resp_pap[is.na(bbdd$resp_al) & bbdd$resp_pap == 1] <- 0
 bbdd <- bbdd[!bbdd$resp_pap == "0", ] 
 ```
 
+</div> 
+
+
+---
+
+
+# Variables sociodemograficas de la muestra 
+
+<div style="text-align: justify"> 
+
+A continuación se presenta un análisis descriptivo de la muestra de estudiantes y sus padres en función a las variables disponibles del estudio. 
+
+</div>
+
+## Estudiantes
+
+<div style="text-align: justify"> 
+
++ **Género**: Distribución de la muestra de estudiantes por género. 
+
+```{r genest, echo=TRUE, eval=TRUE}
+#Revisamos la variable 
+sexo <- subset(bbdd, select = c("sexo"))
+sexo <- sexo %>%
+  group_by(sexo)%>%
+  summarize(n=n())%>%
+  mutate(prop=n/sum(n)*100) 
+
+sexo$prop <- round(sexo$prop, digits = 1)
+total <- c("Total", 6342, 100)
+sexo <- rbind(sexo, total)
+#Tabla
+colnames(sexo) <- c("Genero", "Observaciones", "%")
+datatable(sexo, rownames=FALSE, filter="none", options=list(pageLength=10, scro11X=TRUE), style="default", class="compact")
+#Removemos  
+rm(sexo, total)
+```
+
+
++ **Libros en el hogar**: variable categórica que identifica la cantidad de libros en el hogar según el estudiante. Veremos en la sección de [Padre/Madre] también hay un indicador de esta dimensión.
+
+```{r libros, echo=TRUE, eval=TRUE}
+#Libros en el hogar (estudiantes)
+bbdd$libros <- bbdd$alp3
+bbdd$libros <-factor(bbdd$libros, levels = c(1,2,3,4,5), labels = c("0 a 10", "10 a 25", "26 a 100", "101 a 200", "200 o más"))
+libros <- subset(bbdd, select = c("libros"))
+libros <- na.omit(libros)
+
+#Frecuencias
+libros_freq <- libros %>%
+  group_by(libros)%>%
+  summarize(n=n())%>%
+  mutate(prop=n/sum(n)*100) 
+libros_freq$prop <- round(libros_freq$prop, digits = 1)
+total <- c("Total", 6267, 100)
+libros_freq <- rbind(libros_freq, total)
+
+#Tabla
+colnames(libros_freq) <- c("Libros en el hogar (estudiantes)", "Observaciones", "%")
+datatable(libros_freq, rownames=FALSE, filter="none", options=list(pageLength=10, scro11X=TRUE), style="default", class="compact")
+
+#Graficamos cantidad de libros en el hogar
+ggplot(data=libros, aes(libros)) + geom_bar(aes(y = ((..count..)/sum(..count..))), stat="count", colour="black") + 
+  scale_x_discrete(labels = c("0 a 10","10 a 25","26 a 100","101 a 200","200 o más")) +     scale_y_continuous(labels = scales::percent) +
+  geom_text(aes(label = scales::percent(((..count..)/sum(..count..))),
+                   y= ((..count..)/sum(..count..))), stat= "count", vjust=-.5, size=3) +
+  ggtitle("Libros en el hogar estudiantes (n=6267)") +
+  labs(x = "Cantidad de libros", y = "%") 
+
+#Removemos  
+rm(libros_freq, libros, total)
+```
+
+</div>
+
+---
+
+## Padre/Madre
+
+<div style="text-align: justify"> 
+
++ **Género**: Se recodifica la variable con valores 0 para hombre (`pap2==1`) y 1 mujer (`pap2==2`). De esta manera, se asume que el respondente es el padre o madre del estudiante. 
+
+```{r genpa, echo=TRUE, eval=TRUE}
+#Género Padres
+bbdd$generopap[bbdd$pap2==1] <- 0 #Padre (Hombre)
+bbdd$generopap[bbdd$pap2==2] <- 1 #Madre (Mujer)
+
+#Revisamos la variable 
+genero <- subset(bbdd, select = c("generopap"))
+genero <- na.omit(genero)
+
+genero <- genero %>%
+  group_by(generopap)%>%
+  summarize(n=n())%>%
+  mutate(prop=n/sum(n)*100) 
+
+genero$prop <- round(genero$prop, digits = 1)
+total <- c("Total", 6211, 100)
+genero <- rbind(genero, total)
+genero$generopap[genero$generopap==0] <- "Padre"
+genero$generopap[genero$generopap==1] <- "Madre"
+
+#Tabla
+colnames(genero) <- c("Genero", "Observaciones", "%")
+datatable(genero, rownames=FALSE, filter="none", options=list(pageLength=10, scro11X=TRUE), style="default", class="compact")
+#Removemos  
+rm(genero, total)
+```
+
+
++ **Año de nacimiento del padre/madre (proxy edad)**: Dado que la variable edad del padre/madre no está disponible se procede a utilizar el año de nacimiento como una aproximación de esta dimensión. A partir de inconsistencias observadas en los datos, se procede a dejar como missing 146 observaciones con años de nacimiento inferiores a 1900 y 125 casos con años de nacimiento superiores a los 1995. En esta secuencia se generan tres variables: edad, edad del padre y edad de la madre. Si es que se utiliza esta variable en el análisis se recomienda excluir atípicos sobre los 75 años (50 observaciones).
+
+
+```{r edpa, echo=TRUE, eval=TRUE}
+#Corrección años de nacimiento 
+bbdd$pap1_2[bbdd$pap1_2<1900] <- NA
+bbdd$pap1_2[bbdd$pap1_2>1995] <- NA
+#Edad General (ambos padres)
+bbdd$edad <- 2019 - bbdd$pap1_2
+#Edad del Padre 
+bbdd$edad_pa <- ifelse(bbdd$genero==0, (2019 - bbdd$pap1_2), NA)
+#Edad de la Madre 
+bbdd$edad_ma <- ifelse(bbdd$genero==1, (2019 - bbdd$pap1_2), NA)
+#Descriptivos
+edad <- subset(bbdd, select = c("edad", "generopap"))
+skim_with(numeric = list(complete=NULL, p25=NULL, p50=NULL, p75=NULL),factor = list(complete=NULL), integer = list(complete=NULL), character = list(complete=NULL))
+skim(edad$edad) %>% pander()
+
+#Gráficos
+edad <- na.omit(edad)
+ggplot(data=edad, aes(edad)) + geom_histogram(aes(y =..density..),binwidth=1, colour="black") + ggtitle("Histograma edad de la muestra") +
+  labs(x = "Edad", y = "Frecuencia") +
+    stat_function(fun = dnorm, 
+        args = list(mean = mean(edad[,1], na.rm = TRUE), 
+                    sd = sd(edad[,1], na.rm = TRUE)), 
+        colour = 'darkred', size = 1) 
+
+#Edad Padre y Madre
+edad$genero <-factor(edad$generopap, levels = c(0,1), labels = c("Padre", "Madre"))
+#Gráfico
+ggplot(data=edad, aes(edad)) + 
+  geom_histogram(aes(y =..density..),binwidth=1, colour="black") +
+    facet_wrap(~generopap) +
+  ggtitle("Histograma Edad") +
+  labs(x = "Edad", y = "Frecuencia") +
+    stat_function(fun = dnorm, 
+        args = list(mean = mean(edad[,1], na.rm = TRUE), 
+                    sd = sd(edad[,1], na.rm = TRUE)), 
+        colour = 'darkred', size = 1) 
+
+rm(edad)
+```
+
++ **Educación del padre/madre**: esta variable se construyó a partir de la información disponible en 10 variables que identifican los niveles educacionales. En otras palabras, cada una de estas variables corresponde a un nivel educacional con código 1 si es que corresponde al nivel educacional del respondente y código 2 si corresponde al nivel educacional del cónyuge. 
+
+A partir de esta información se construye una nueva variable que identifica el nivel educativo del respondente y el cónyuge, en función al número de columna que tiene valor 1 y 2. Posterior a eso, se procede a identificar si corresponde al nivel educativo del padre o la madre cruzando con la variable género (se asume por defecto que el respondente es el padre/madre del alumno). Las categorías duplicadas, vale decir más de una columna con valor 1 o 2,fueron consideradas como casos pérdidos dentro de la muestra. 
+
+Finalmente, se asume esta variable como continua de 10 niveles producto de la falta de información disponible para imputar una etiqueta. En el SIMCE, por ejemplo, se utiliza una variable de 21 categorías, lo cual no permite realizar una imputación fundamentada de categorías educacionales. 
+
+
+```{r educpa, echo=TRUE, eval=TRUE}
+#Base de datos de prueba 
+#ed <- subset(bbdd, select = c(242:251))
+#Parte 1 codificación del nivel educativo del repondente (1) y su cónyuge/pareja (2).
+#Nivel educacional del respondente (1)
+#Identificamos el nivel educativo (columna con valor 1)
+num1 <- apply(bbdd[242:251], 1, function(row) which(row == 1))
+bbdd$educ1 <- sapply(num1, function(x){as.numeric(x[1])})
+#Observamos que hay columnas duplicadas (valor 1 para dos columnas distintas)
+num1_rep <- apply(bbdd[242:251], 1, function(row) which(row == 1))
+bbdd$educ1_rep <- sapply(num1_rep, function(x){as.numeric(x[2])})
+#Eliminamos estos duplicados
+bbdd$educ1[bbdd$educ1_rep!=is.na(bbdd$educ1_rep)] <- NA
+
+#Nivel educacional del cónyuge/pareja (2)
+#Identificamos el nivel educativo (columna con valor 2)
+num2 <- apply(bbdd[242:251], 1, function(row) which(row == 2))
+bbdd$educ2 <- sapply(num2, function(x){as.numeric(x[1])})
+#Observamos que hay columnas duplicadas (valor 2 para dos columnas distintas)
+num2_rep <- apply(bbdd[242:251], 1, function(row) which(row == 2))
+bbdd$educ2_rep <- sapply(num2_rep, function(x){as.numeric(x[2])})
+#Eliminamos estos duplicados
+bbdd$educ2[bbdd$educ2_rep!=is.na(bbdd$educ2_rep)] <- NA
+
+#Removemos variables y objetos auxiliares
+rm(num1, num1_rep, num2, num2_rep)
+bbdd$educ1_rep <- NULL
+bbdd$educ2_rep <- NULL
+
+#En función al género del respondente generamos las variables que identifican el nivel educacional alcanzado por el padre y la madre: 
+
+#Educación del padre
+bbdd$educpadre <-ifelse(bbdd$genero==0, bbdd$educ1, NA)
+bbdd$educpadre <-ifelse(is.na(bbdd$educpadre), bbdd$educ2, bbdd$educpadre)
+
+#Educación de la madre
+bbdd$educmadre <-ifelse(bbdd$genero==1, bbdd$educ1, NA)
+bbdd$educpadre <-ifelse(is.na(bbdd$educpadre), bbdd$educ2, bbdd$educpadre)
+
+#Descriptivos
+educ <- subset(bbdd, select = c("educpadre", "educmadre"))
+skim_with(numeric = list(complete=NULL, p25=NULL, p50=NULL, p75=NULL),factor = list(complete=NULL), integer = list(complete=NULL), character = list(complete=NULL))
+skim(educ) %>% pander()
+
+#Gráficos 
+ggplot(data=educ, aes(educpadre)) + geom_bar(aes(y = ((..count..)/sum(..count..))), stat="count", colour="black") + 
+  scale_x_discrete(labels = c("0 a 10","10 a 25","26 a 100","101 a 200","200 o más")) +     scale_y_continuous(labels = scales::percent) +
+  geom_text(aes(label = scales::percent(((..count..)/sum(..count..))),
+                   y= ((..count..)/sum(..count..))), stat= "count", vjust=-.5, size=3) +
+  ggtitle("Histograma educación padre (n=3026)") +
+  labs(x = "Niveles educacionales", y = "%") +
+  scale_x_continuous(breaks=c(seq(1,10,1))) 
+
+ggplot(data=educ, aes(educmadre)) + geom_bar(aes(y = ((..count..)/sum(..count..))), stat="count", colour="black") + 
+  scale_x_discrete(labels = c("0 a 10","10 a 25","26 a 100","101 a 200","200 o más")) +     scale_y_continuous(labels = scales::percent) +
+  geom_text(aes(label = scales::percent(((..count..)/sum(..count..))),
+                   y= ((..count..)/sum(..count..))), stat= "count", vjust=-.5, size=3) +
+  ggtitle("Histograma educación de la madre (n=3396)") +
+  labs(x = "Niveles educacionales", y = "%") +
+  scale_x_continuous(breaks=c(seq(1,10,1))) 
+#Removemos
+rm(educ)
+```
+
+
+Dicho esto, se propone la siguiente asignación de categorías para los atributos de respuesta: 
+
+    Valor 1: "Sin estudios"
+    Valor 2: "Educación Básica o Preparatoria incompleta" 
+    Valor 3: "Educación Básica o Preparatoria completa"
+    Valor 4: "Educación Media o Humanidades incompleta"
+    Valor 5: "Educación Media o Humanidades completa"
+    Valor 6: "Técnico Superior incompleta"
+    Valor 7: "Técnico Superior completa"
+    Valor 8: "Universitaria incompleta"
+    Valor 9: "Universitaria completa"
+    Valor 10: "Estudios de posgrado (magíster o doctorado)"
+
+
++ **Libros en el hogar**: variable categórica que identifica la cantidad de libros en el hogar según el informante a cargo del estudiante (padre/madre).
+
+```{r librospa, echo=TRUE, eval=TRUE}
+#Libros en el hogar (estudiantes)
+bbdd$librospap <- bbdd$pap11
+bbdd$librospap <-factor(bbdd$librospap, levels = c(1,2,3,4,5), labels = c("0 a 10", "10 a 25", "26 a 100", "101 a 200", "200 o más"))
+librospap <- subset(bbdd, select = c("librospap"))
+librospap <- na.omit(librospap)
+
+#Frecuencias
+libros_freq <- librospap %>%
+  group_by(librospap)%>%
+  summarize(n=n())%>%
+  mutate(prop=n/sum(n)*100) 
+libros_freq$prop <- round(libros_freq$prop, digits = 1)
+total <- c("Total", 6267, 100)
+libros_freq <- rbind(libros_freq, total)
+
+#Tabla
+colnames(libros_freq) <- c("Libros en el hogar (padres)", "Observaciones", "%")
+datatable(libros_freq, rownames=FALSE, filter="none", options=list(pageLength=10, scro11X=TRUE), style="default", class="compact")
+
+#Graficamos cantidad de libros en el hogar
+ggplot(data=librospap, aes(librospap)) + geom_bar(aes(y = ((..count..)/sum(..count..))), stat="count", colour="black") + 
+  scale_x_discrete(labels = c("0 a 10","10 a 25","26 a 100","101 a 200","200 o más")) +     scale_y_continuous(labels = scales::percent) +
+  geom_text(aes(label = scales::percent(((..count..)/sum(..count..))),
+                   y= ((..count..)/sum(..count..))), stat= "count", vjust=-.5, size=3) +
+  ggtitle("Libros en el hogar padres (n=6267)") +
+  labs(x = "Cantidad de libros", y = "%") 
+
+#Removemos  
+rm(libros_freq, librospap, total)
+```
+
++ **Ocupación**: La pregunta que responde a esta variable es la siguiente: ¿Cuál es su trabajo principal y la de su cónyuge/pareja? Sin embargo las categorías de respuesta disponible no entregan información suficiente para realizar una medición apropiada de esta dimensión: 
+
+    - Valor 0: "Vacío"
+    - Valor 1: "Tiene marca"
+  
+Esta codificación no nos permite inferir algo sustantivo respectoa la ocupación de los padres. 
+
+</div> 
+
+---
+
+# Puntaje en la prueba de conocimiento
+
+<div style="text-align: justify"> 
+
+Revisión descriptiva de los puntajes obtenidos en la prueba de conocimiento, en estos análisis preliminares se omite la opción de ponderar las estimaciones debido a la falta de información respecto a la construcción del ponderador. 
+
+```{r puntaje, echo=TRUE, eval=TRUE}
+#Descriptivos puntaje prueba de conocimiento
+puntaje <- subset(bbdd, select = c("puntaje"))
+skim_with(numeric = list(complete=NULL, p25=NULL, p50=NULL, p75=NULL),factor = list(complete=NULL), integer = list(complete=NULL), character = list(complete=NULL))
+skim(puntaje) %>% pander()
+
+#Gráficos
+ggplot(data=puntaje, aes(puntaje)) + geom_histogram(aes(y =..density..),binwidth=10, colour="black") + ggtitle("Histograma prueba de conocimiento") +
+  labs(x = "Puntaje", y = "") +
+    stat_function(fun = dnorm, 
+        args = list(mean = mean(puntaje[,1], na.rm = TRUE), 
+                    sd = sd(puntaje[,1], na.rm = TRUE)), 
+        colour = 'darkred', size = 1) 
+
+#Removemos objetos
+rm(puntaje)
+```
+
+
+
+</div> 
+
+
+---
+
+
+# Clima Escolar 
+
+<div style="text-align: justify"> 
+
+Esta variable considera una dimensión con indicadores respectivos a la escuela y el trato de los profesores. A partir de esta información se construye como exploratorio para los análisis un indicador sumativo que incorpora las 9 primeras dimensiones pues refieren a aspectos positivos del clima escolar a diferencia de la última dimensión. Este indicador tiene un rango ajustado de 1 a 28 con una media de 19.09 y una desviación estándar de 4.59.
+
++ **Escuela y profesores**: 
+
+      clima 1: La mayoría de mis profesores me tratan de manera justa
+      clima 2: Los estudiantes se llevan bien con la mayoría de los profesores
+      clima 3:. A la mayoría de los profesores les interesa el bienestar de los estudiantes
+      clima 4: La mayoría de mis profesores realmente escuchan lo que tengo que decir
+      clima 5: Si necesito ayuda extra, mis profesores me la darán
+      clima 6: La mayoría de los profesores detendrían el bullying a los estudiantes
+      clima 7: La mayoría de los estudiantes de mi escuela se trata con respeto
+      clima 8: La mayoría de los estudiantes de mi escuela se lleva bien entre ellos
+      clima 9: Mi escuela es un lugar en que los estudiantes se sienten seguros
+      clima 10: Tengo miedo de ser víctima de bullying por parte de otros estudiantes
+      
+```{r escuela, echo=TRUE, eval=TRUE}
+#Codificamos nuevas variables
+bbdd$clima1 <- bbdd$alp5_1
+bbdd$clima2 <- bbdd$alp5_2
+bbdd$clima3 <- bbdd$alp5_3
+bbdd$clima4 <- bbdd$alp5_4
+bbdd$clima5 <- bbdd$alp5_5
+bbdd$clima6 <- bbdd$alp5_6
+bbdd$clima7 <- bbdd$alp5_7
+bbdd$clima8 <- bbdd$alp5_8
+bbdd$clima9 <- bbdd$alp5_9
+bbdd$clima10 <- bbdd$alp5_10
+
+Hmisc::label(bbdd$clima1) <- 'Trato justo'
+Hmisc::label(bbdd$clima2) <- 'Buena relación estudiante/profesor'
+Hmisc::label(bbdd$clima3) <- 'Interes por bienestar estudiante'
+Hmisc::label(bbdd$clima4) <- 'Sentirse escuchado'
+Hmisc::label(bbdd$clima5) <- 'Ayuda extra'
+Hmisc::label(bbdd$clima6) <- 'Detener el bullying'
+Hmisc::label(bbdd$clima7) <- 'Trato respetuoso entre estudiantes'
+Hmisc::label(bbdd$clima8) <- 'Buena relación entre estudiantes'
+Hmisc::label(bbdd$clima9) <- 'Sentirse seguro'
+Hmisc::label(bbdd$clima10) <- 'Miedo bullying'
+
+#Seleccionamos 
+clima <- subset(bbdd, select = c("clima1","clima2","clima3","clima4","clima5",
+                                 "clima6","clima7","clima8","clima9","clima10"))
+#Descriptivos
+skim(clima) %>% pander()
+
+#Gráficos
+plot_likert(clima,
+            axis.titles = "Clima escolar: escuela y profesores",
+            geom.colors = "PuBu", # colorbrewer2.org para temas 
+            legend.labels = c("Muy de desacuerdo", "En descuerdo", "De acuerdo", "Muy de acuerdo"),
+            catcount = 4,
+            sort.frq = "neg.asc", # sort descending
+            digits = 0,
+            geom.size = 0.8) 
+
+
+#Construímos el indicador de clima escolar (sumativo continuo)
+bbdd$clima_esc <- bbdd$clima1 + bbdd$clima2 + bbdd$clima3 + bbdd$clima4 + 
+  bbdd$clima5 + bbdd$clima6 + bbdd$clima7 + bbdd$clima8 + bbdd$clima9  
+#Ajustamos para que parta de 1
+bbdd$clima_esc <- bbdd$clima_esc - 8
+
+#Descriptivos
+skim(bbdd$clima_esc) %>% pander()
+
+#Gráficos
+clima <- subset(bbdd, select = c("clima_esc"))
+ggplot(data=clima, aes(clima_esc)) + geom_histogram(aes(y =..density..),binwidth=1, colour="black") + ggtitle("Histograma Clima Escolar (n=5630)") +
+  scale_x_continuous(breaks = c(1:28)) +
+  labs(x = "Puntaje", y = "") +
+    stat_function(fun = dnorm, 
+        args = list(mean = mean(clima[,1], na.rm = TRUE), 
+                    sd = sd(clima[,1], na.rm = TRUE)), 
+        colour = 'darkred', size = 1) 
+
+#Removemos
+rm(clima)
+```
+
++ **Espacios de discusión**: esta dimensión refiere especificamente a un clima escolar favorable a espacios de discusión particular, lo cual está íntimamente ligado a la hipótesis de este proyecto de investigación. A partir de esta información se construye como propuesta un indicador sumativo con un rango ajustado de 1 a 19, media de 13.56 y desviación estándar de 3.69. Estos indicadores son solo de uso instrumental. 
+
+      Discusión 1: Los profesores estimulan a los estudiantes a formar sus propias opiniones
+      Discusión 2: Los profesores estimulan a los estudiantes a expresar sus opiniones
+      Discusión 3: Los estudiantes plantean hechos políticos de actualidad para ser discutidos en clases
+      Discusión 4: Los estudiantes expresan sus opiniones en clases, aun cuando sean distintas a las de los demás
+      Discusión 5: Los profesores estimulan a los estudiantes a conversar los temas con gente que opina distinto
+      Discusión 6: Los profesores exponen los temas desde los distintos enfoques al explicarlos en clases
+
+```{r discusión, echo=TRUE, eval=TRUE}
+#Codificamos nuevas variables
+bbdd$discusion1 <- bbdd$alp15_1
+bbdd$discusion2 <- bbdd$alp15_2
+bbdd$discusion3 <- bbdd$alp15_3
+bbdd$discusion4 <- bbdd$alp15_4
+bbdd$discusion5 <- bbdd$alp15_5
+bbdd$discusion6 <- bbdd$alp15_6
+
+Hmisc::label(bbdd$discusion1) <- 'Estimulo a formar opiniones propias (profesores)'
+Hmisc::label(bbdd$discusion2) <- 'Estimulo a expresar opiniones (profesores)'
+Hmisc::label(bbdd$discusion3) <- 'Proponer hechos políticos a discutir (estudiantes)'
+Hmisc::label(bbdd$discusion4) <- 'Expresar opiniones distintas al resto (estudiantes)'
+Hmisc::label(bbdd$discusion5) <- 'Estimulo a discutir con otros (profesores)'
+Hmisc::label(bbdd$discusion6) <- 'Temas desde distintos enfoques (profesores)'
+
+#Seleccionamos 
+discusion <- subset(bbdd, select = c("discusion1","discusion2","discusion3","discusion4",
+                                 "discusion5", "discusion6"))
+#Descriptivos
+skim(discusion) %>% pander()
+
+#Gráficos
+plot_likert(discusion,
+            axis.titles = "Clima escolar: espacios de discusión",
+            geom.colors = "PuBu", # colorbrewer2.org para temas 
+            legend.labels = c("Nunca", "Rara vez", "A veces", "Frecuentemente"),
+            catcount = 4,
+            sort.frq = "neg.asc", # sort descending
+            digits = 0,
+            geom.size = 0.8) 
+
+
+#Construímos el indicador de clima escolar (sumativo continuo)
+bbdd$discusion <- bbdd$discusion1 + bbdd$discusion2 + bbdd$discusion3 + bbdd$discusion4 + bbdd$discusion5 + bbdd$discusion6
+
+#Ajustamos para que parta de 1
+bbdd$discusion <- bbdd$discusion - 5
+
+#Descriptivos
+skim(bbdd$discusion) %>% pander()
+
+#Gráficos
+discusion <- subset(bbdd, select = c("discusion"))
+ggplot(data=discusion, aes(discusion)) + geom_histogram(aes(y =..density..),binwidth=1, colour="black") + ggtitle("Histograma Discusión en la escuela (n=5880)") +
+  scale_x_continuous(breaks = c(1:19)) +
+  labs(x = "Frecuencia", y = "") +
+    stat_function(fun = dnorm, 
+        args = list(mean = mean(discusion[,1], na.rm = TRUE), 
+                    sd = sd(discusion[,1], na.rm = TRUE)), 
+        colour = 'darkred', size = 1) 
+
+#Removemos
+rm(discusion)
+
+```
+
+
+</div> 
+
+---
+
+# Variables Espejo: vínculo entre padres e hijos
+
+<div style="text-align: justify"> 
+
+A continuación se presenta la codificación y análisis descriptivo / correlacional exploratorio con las principales variables de estudio que se replican integramente en los cuestionarios para padres e hijos. Cabe mencionar que el análisis considera una base de datos con 6243 observaciones correspondiente a los datos disponibles, aunque es posible observar mayor cantidad de missing dada la respuesta en blanco de algunas variables. 
+
+</div> 
+
 ## Interés Político
 
-**Pregunta**: Cuánto te interesas por temas políticas y sociales
+    ¿Cuánto te interesas por temas políticas y sociales?
+    
+    1. Nada
+    2. Poco
+    3. Bastante
+    4. Mucho
 
-Categorías de respuesta: 
++ **Descriptivos**:
 
-1. Nada
-2. Poco
-3. Bastante
-4. Mucho
+```{r interes pol, echo=TRUE, eval=TRUE}
+#Generamos variables
+bbdd$intpol_al <- bbdd$alp16
+bbdd$intpol_pap <- bbdd$pap17
+intpol <- subset(bbdd, select = c("intpol_al", "intpol_pap"))
+skim(intpol) %>% pander()
 
+#Removemos missing
+intpol <- na.omit(intpol)
+intpol$intpol_al <-factor(intpol$intpol_al, levels = c(1,2,3,4), labels = c("Nada", "Poco", "Bastante", "Mucho"))
+intpol$intpol_pap <-factor(intpol$intpol_pap, levels = c(1,2,3,4), labels = c("Nada", "Poco", "Bastante", "Mucho"))
+
+#Frecuencias Estudiantes
+intpol_freqal <- intpol %>%
+  group_by(intpol$intpol_al)%>%
+  summarize(n=n())%>%
+  mutate(prop=n/sum(n)*100) 
+intpol_freqal$prop <- round(intpol_freqal$prop, digits = 1)
+total <- c("Total", 6119, 100)
+intpol_freqal <- rbind(intpol_freqal, total)
+#Tabla
+colnames(intpol_freqal) <- c("Interés en política (estudiantes)", "Observaciones", "%")
+datatable(intpol_freqal, rownames=F, filter="none", options=list(pageLength=10, scro11X=TRUE), style="default", class="compact")
+
+#Frecuencias padres
+intpol_freqpap <- intpol %>%
+  group_by(intpol$intpol_pap)%>%
+  summarize(n=n())%>%
+  mutate(prop=n/sum(n)*100) 
+intpol_freqpap$prop <- round(intpol_freqpap$prop, digits = 1)
+total <- c("Total", 6119, 100)
+intpol_freqpap <- rbind(intpol_freqpap, total)
+#Tabla
+colnames(intpol_freqpap) <- c("Interés en política (padres)", "Observaciones", "%")
+datatable(intpol_freqpap, rownames=F, filter="none", options=list(pageLength=10, scro11X=TRUE), style="default", class="compact")
+
+#Gráfico 
+alumnos <- ggplot(data=intpol, aes(intpol$intpol_al)) + geom_bar(aes(y = ((..count..)/sum(..count..))), stat="count", colour="black") + 
+  scale_y_continuous(labels = scales::percent) +
+  geom_text(aes(label = scales::percent(((..count..)/sum(..count..))),
+                   y= ((..count..)/sum(..count..))), stat= "count", vjust=-.5, size=3) +
+  ggtitle("Interés política alumnos (n=6119)") +
+  labs(x = "Nivel de interés", y = "%") 
+
+padres <- ggplot(data=intpol, aes(intpol$intpol_pap)) + geom_bar(aes(y = ((..count..)/sum(..count..))), stat="count", colour="black") + 
+  scale_y_continuous(labels = scales::percent) +
+  geom_text(aes(label = scales::percent(((..count..)/sum(..count..))),
+                   y= ((..count..)/sum(..count..))), stat= "count", vjust=-.5, size=3) +
+  ggtitle("Interés política padres (n=6119)") +
+  labs(x = "Nivel de interés", y = "%") 
+#Revisamos los gráficos
+ggarrange(alumnos, padres, ncol = 2, nrow = 1)
+```
+
++ **Correlaciones Policóricas**: Se presentan correlaciones asumiendo la variable como categórica (tabla de correlaciones) y como continua (gráfico de asociación de las variables).
+
+```{r interes pol2, echo=TRUE, eval=TRUE}
+#Asociaciones
+#Correlaciones Policóricas
+intpol$intpol_al1 <- as.numeric(intpol$intpol_al)
+intpol$intpol_pap1 <- as.numeric(intpol$intpol_pap)
+intpol2 <- subset(intpol, select = c("intpol_al1", "intpol_pap1"))
+cor <- polychoric(intpol2, na.rm=TRUE)
+cor <- cor[["rho"]]
+cor <- round(cor,2)
+#Tabla
+colnames(cor) <- c("Interés Alumnos", "Interés Padres")
+rownames(cor) <- c("Interés Alumnos", "Interés Padres")
+datatable(cor, rownames=T, filter="none", options=list(pageLength=10, scro11X=TRUE), style="default", class="compact")
+
+#Gráfico de asociación 
+ggplot(intpol2, aes(x=intpol_pap1,y=intpol_al1)) +
+geom_point(position=position_jitter(w=0.1,h=0)) +
+geom_smooth(method="lm", se=FALSE) +
+xlab('Interés político Padres') +
+ylab('Interés político Hijos') +
+stat_cor(label.x = 3.49999, label.y = 3.5) 
+
+#Removemos
+rm(intpol, intpol2, intpol_freqal, intpol_freqpap, total, alumnos, padres, cor)
+```
+
++ **Regresión Múltiple lineal**: Se presentan un modelo que asume la variable dependiente e independiente del modelo como continuas y otro modelo asumiendo dichas variables como categóricas ordinales. 
+
+```{r interes pol3, echo=TRUE, eval=TRUE, warning=FALSE, results = "asis"}
+#Ajustamos variable
+#Variable continua
+Hmisc::label(bbdd$intpol_al) <- 'Interés Político (Alumnos)'
+Hmisc::label(bbdd$intpol_pap) <- 'Interés Político (Padres)'
+#Variable Categórica
+bbdd$intpol_alc <-factor(bbdd$intpol_al, levels = c(1,2,3,4), labels = c("Nada", "Poco", "Bastante", "Mucho"))
+bbdd$intpol_papc <-factor(bbdd$intpol_pap, levels = c(1,2,3,4), labels = c("Nada", "Poco", "Bastante", "Mucho"))
+
+#Modelo de regresión múltiple lineal
+#Base de datos para estimación
+bbdd1 <- subset(bbdd, select = c("intpol_al", "intpol_pap", "puntaje", "sexo", "clima_esc", "discusion", "educmadre", "educpadre", "libros"))
+
+#bbdd2 <- subset(bbdd, select = c("intpol_al", "intpol_pap", "puntaje", "clima_esc", "discusion", "educmadre", "libros"))
+#bbdd2$libros <- as.numeric(bbdd2$libros)
+#bbdd2 <- na.omit(bbdd2)
+#cor(bbdd2)
+
+#1. Modelo original 
+m1 <- lm(intpol_al~intpol_pap, data=bbdd1)
+m2 <- lm(intpol_al~intpol_pap + puntaje, data=bbdd1)
+m3 <- lm(intpol_al~intpol_pap + puntaje + sexo, data=bbdd1)
+m4 <- lm(intpol_al~intpol_pap + puntaje + sexo + clima_esc, data=bbdd1)
+m5 <- lm(intpol_al~intpol_pap + puntaje + sexo + clima_esc + discusion, data=bbdd1)
+m6 <- lm(intpol_al~intpol_pap + puntaje + sexo + clima_esc + discusion + libros, data=bbdd1)
+m7 <- lm(intpol_al~intpol_pap + sexo + clima_esc + discusion + puntaje*libros,  data=bbdd1)
+
+
+#Tabla con las regresiones
+stargazer(m1,m2,m3,m4,m5,m6,m7, title = "Modelos de regresión lineal interés político (estudiantes)",
+           covariate.labels=c("Interés politico (Padre)", "Hombre", "Clima Escolar", "Espacios de discusion", "Conocimiento Cívico", "Libros hogar: 10 a 25", "Libros hogar: 26 a 100", "Libros hogar: 101 a 200", "Libros hogar: 200 o más"),
+          column.labels=c("Modelo","Modelo","Modelo","Modelo","Modelo", "Modelo", "Modelo"), type ='html', font.size = "small", align = TRUE, omit.stat=c("f", "ser"), column.sep.width = "-15pt")
+
+#Gráfico de interacciones 
+plot_model(m7, type = "int", title = "Interacción conocimiento cívico y libros en el hogar",
+  axis.title = c("Puntaje", "Interés Político (alumnos)"), legend.title = "Libros en el hogar")
+
+#Gráfico de interacciones 
+rm(bbdd1,bbdd2, m1,m2,m3,m4,m5,m6,m7)
+```
+
++ **Regresión Múltiple logística ordinal**:
+
+```{r interes pol4, echo=TRUE, eval=TRUE, warning=FALSE, results = "asis"}
+#Base de datos con nuestras variables
+bbdd1 <- subset(bbdd, select = c("intpol_alc", "intpol_papc", "puntaje", "sexo", "clima_esc", "discusion", "educmadre", "educpadre", "libros"))
+
+#Modelos de regresión logístico ordinales
+library(MASS)
+m1 <- polr(intpol_alc~intpol_papc, data=bbdd1, Hess = TRUE)
+m2 <- polr(intpol_alc~intpol_papc + puntaje, data=bbdd1, Hess = TRUE)
+m3 <- polr(intpol_alc~intpol_papc + puntaje + sexo, data=bbdd1, Hess = TRUE)
+m4 <- polr(intpol_alc~intpol_papc + puntaje + sexo + clima_esc, data=bbdd1, Hess = TRUE)
+m5 <- polr(intpol_alc~intpol_papc + puntaje + sexo + clima_esc + discusion, data=bbdd1, Hess = TRUE)
+m6 <- polr(intpol_alc~intpol_papc + puntaje + sexo + clima_esc + discusion + libros, data=bbdd1, Hess = TRUE)
+m7 <- polr(intpol_alc~intpol_papc + sexo + clima_esc + discusion + puntaje*libros,  data=bbdd1, Hess = TRUE)
+
+#Modelo de regresión losgístico ordinal 
+stargazer(m1,m2,m3,m4,m5,m6,m7, title = "Modelos logísticos ordinales interés político (estudiantes)",
+          column.labels=c("Modelo","Modelo","Modelo","Modelo","Modelo", "Modelo", "Modelo"), 
+          covariate.labels=c("Interés politico (Padre):Poco", "Interés politico (Padre):Bastante", "Interés politico (Padre):Mucho", "Conocimiento cívico", "Hombre", "Clima Escolar", "Espacios de discusion", "Libros hogar: 10 a 25", "Libros hogar: 26 a 100", "Libros hogar: 101 a 200", "Libros hogar: 200 o más"),
+          type ='html', font.size = "small", align = TRUE, column.sep.width = "-15pt", ord.intercepts = T, style="all2")
+
+
+#Gráfico de interacciones 
+plot_model(m7, type = "int", title = "Interacción conocimiento cívico y libros en el hogar", axis.title = c("Puntaje", "Interés Político (alumnos)"), legend.title = "Libros en el hogar")
+
+#Gráfico de interacciones 
+rm(bbdd1,bbdd2, m1,m2,m3,m4,m5,m6,m7)
+```
+
+
+## Percepción sobre la democracia
+
+## Participación en organizaciones
+
+## Atributos del buen ciudadano
+
+## Confianza en las instituciones 
+
+## Percepciones sobre la paz y violencia 
 
