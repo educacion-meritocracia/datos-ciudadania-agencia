@@ -366,14 +366,48 @@ summary {
 </div>
 
 
-<p>#ciudadania-Agencia Estudio ciudadanía agencia educacion.</p>
-<p>Hasta la fecha se genera un reporte en HTML con la siguiente información ‘repote’:</p>
+<div id="ciudadania-agencia" class="section level1">
+<h1>Ciudadania-Agencia</h1>
+<p>Estudio ciudadanía según datos de la agencia de la educacion.</p>
+<p>Reporte en HTML con una análisis exploratorio de la base de datos con información de los resultados obtenidos en el estudio de formación ciudadana del años 2017 (Datos levantados por la Agencia de la Calidad de la educación).</p>
+<p>El <strong>objetivo</strong> de este reporte es profundizar en un aspecto central del proyecto Fondecyt: identificar la transmisión intergeneracional de la desigualdad política, orientada a evaluar la coincidencia de las actitudes, conocimiento, creencias y comportamiento para el ejercicio de la ciudadanía entre padres/madres y sus hijos(as). Para esto, el presente reporte considera el análisis de tres instrumentos:</p>
 <ul>
-<li>Descripción de las principales variables del estudio (que puedan ser relevantes para el fondecyt)</li>
+<li>Resultados prueba de conocimiento cívico <code>bbdd_puntajes</code></li>
+<li>Cuestionarios a estudiantes sobre creencias, conocimiento, actitudes y prácticas (CCAP), para el ejercicio de la ciudadanía:<code>bbdd_estudiantes</code></li>
+<li>Cuestionarios a estudiantes sobre creencias, conocimiento, actitudes y prácticas (CCAP), para el ejercicio de la ciudadanía:<code>bbdd_padres</code></li>
+</ul>
+<p>Las temáticas relevantes para los fines de investigación de este proyecto son los siguientes:</p>
+<ol style="list-style-type: decimal">
+<li><strong>Interés Político</strong></li>
+<li><strong>Percepción sobre la democracia</strong></li>
+<li><strong>Participación política</strong></li>
+<li><strong>Participación en organizaciones</strong></li>
+<li><strong>Atributos de un buen ciudadano</strong></li>
+<li><strong>Confianza en las instituciones</strong><br />
+</li>
+<li><strong>Percepciones sobre paz y violencia</strong></li>
+</ol>
+<p>Estos temas se observan a la luz de las siguientes variables:</p>
+<ol style="list-style-type: decimal">
+<li><strong>Género de los/as estudiantes</strong></li>
+<li><strong>Cantidad de libros en el hogar</strong></li>
+<li><strong>Puntaje en la prueba de conocimiento</strong></li>
+</ol>
+<p>Los análisis disponibles en estos códigos son los siguientes:</p>
+<ul>
+<li>Merge de las bases de datos</li>
+<li>Análisis y documentación de la no respuesta</li>
+<li>Descripción de las principales variables del estudio</li>
 <li>Mapa de las variables espejo (preguntado para padres e hijos)</li>
-<li>Análisis correlacional de las variables espejo (Panel de correlaciones y gráficos tipo scatter plot) de las principales variables entre padres e hijos.</li>
+<li>Análisis correlacional de las variables espejo (Panel de correlaciones y gráficos tipo scatter plot) de las principales variables entre padres e hijos</li>
+<li>Modelos de regresión lineal, asumiendo las variables como continuas</li>
+<li>Modelos de regresión logístico ordinales</li>
+<li>Interacciones relevantes</li>
 </ul>
 <p>Asimismo se puede hacer una revisión dinámica de las variables del estudio, sus descripción y el tipo individuos que responde (alumnos, padres o ambos) en el Documento de consulta: <a href="https://panelciudadania.shinyapps.io/Documento_consulta/" class="uri">https://panelciudadania.shinyapps.io/Documento_consulta/</a></p>
+<p>Todas las decisiones de análisis están documentadas en el respectivo documento markdown de reporte.</p>
+<p>José Daniel Conejeros</p>
+</div>
 
 
 

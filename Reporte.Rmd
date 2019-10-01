@@ -17,7 +17,7 @@ subtitle: "Fondecyt 1181239. Socialización política y educación para la ci
 
 A continuación se expone el reporte técnico con el análisis de las bases de datos otorgadas por la Agencia de la Calidad de la Educación, en marco de su evaluación nacional sobre formación ciudadana realizada el año 2017 a una muestra representativa de estudiantes de 8º básico. Esta evaluación cuenta con una muestra de escuelas llegando a un total de **10.213** estudiantes de 8º básico y considera la aplicación de cuestionarios actitudinales para los/as estudiantes y sus padres. 
 
-En ese sentido, el **objetivo** de este reporte es profundizar en un aspecto central del proyecto Fondecyt: identificar la transmisión intergeneracionla de la desigualdad política, orientada a evaluar la coincidencia de las actitudes, conocimiento, creencias y comportamiento para el ejercicio de la ciudadanía entre padres/madres y sus hijos(as). Para esto, el presente reporte considera el análisis de tres instrumentos: 
+En ese sentido, el **objetivo** de este reporte es profundizar en un aspecto central del proyecto Fondecyt: identificar la transmisión intergeneracional de la desigualdad política, orientada a evaluar la coincidencia de las actitudes, conocimiento, creencias y comportamiento para el ejercicio de la ciudadanía entre padres/madres y sus hijos(as). Para esto, el presente reporte considera el análisis de tres instrumentos: 
 
 + Resultados prueba de conocimiento cívico `bbdd_puntajes`
 + Cuestionarios a estudiantes sobre creencias, conocimiento, actitudes y prácticas (CCAP), para el ejercicio de la ciudadanía:`bbdd_estudiantes`
