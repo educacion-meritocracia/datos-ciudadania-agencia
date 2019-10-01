@@ -50,7 +50,6 @@ library(vcd)
 library(vcdExtra)
 library(skimr)
 library(sjmisc)
-library(dplyr)
 library(stargazer)
 library(sjPlot)
 library(ggpubr)
@@ -318,7 +317,9 @@ proyecto <- subset(proyecto, select = c(2:4))
 datatable(proyecto, rownames=FALSE, filter="top", options=list(pageLength=20, scro11X=TRUE), style="default", class="compact")
 ```
  
-Otras temáticas interesantes de observar y que no están consideradas en este listado y análisis son las siguientes: actitudes hacia inmigrantes y grupos étnicos, actitudes hacia la equidad de género, percepciones sobre la igualdad de oportunidades y preferencias por desigualdad. En términos de variables sociodemográficas se consideran variables relevantes para los estudiantes y sus padres. Finalmente, en temas de clima escolar se observan 10 indicadores diversos. A su vez, se evidencian inconsistencias en las siguientes variables:
+Otras temáticas interesantes de observar y que no están consideradas en este listado y análisis son las siguientes: actitudes hacia inmigrantes y grupos étnicos, actitudes hacia la equidad de género, percepciones sobre la igualdad de oportunidades y preferencias por desigualdad. 
+
+En términos de variables sociodemográficas se consideran variables relevantes para los estudiantes y sus padres. Finalmente, en temas de clima escolar se observan 10 indicadores diversos. A su vez, se evidencian inconsistencias en las siguientes variables:
 
 
 + **Fecha de Nacimiento (mes) padres:** variable presenta varios valores atípicos dentro de la muestra final (239 casos con valor 999).
@@ -397,7 +398,7 @@ rm(sexo, total)
 ```{r libros, echo=TRUE, eval=TRUE}
 #Libros en el hogar (estudiantes)
 bbdd$libros <- bbdd$alp3
-bbdd$libros <-factor(bbdd$libros, levels = c(1,2,3,4,5), labels = c("0 a 10", "10 a 25", "26 a 100", "101 a 200", "200 o más"))
+bbdd$libros <-factor(bbdd$libros, levels = c(1,2,3,4,5), labels = c("0 a 11", "10 a 25", "26 a 100", "101 a 200", "200 o más"))
 libros <- subset(bbdd, select = c("libros"))
 libros <- na.omit(libros)
 
@@ -416,7 +417,7 @@ datatable(libros_freq, rownames=FALSE, filter="none", options=list(pageLength=10
 
 #Graficamos cantidad de libros en el hogar
 ggplot(data=libros, aes(libros)) + geom_bar(aes(y = ((..count..)/sum(..count..))), stat="count", colour="black") + 
-  scale_x_discrete(labels = c("0 a 10","10 a 25","26 a 100","101 a 200","200 o más")) +     scale_y_continuous(labels = scales::percent) +
+  scale_x_discrete(labels = c("0 a 11","10 a 25","26 a 100","101 a 200","200 o más")) +     scale_y_continuous(labels = scales::percent) +
   geom_text(aes(label = scales::percent(((..count..)/sum(..count..))),
                    y= ((..count..)/sum(..count..))), stat= "count", vjust=-.5, size=3) +
   ggtitle("Libros en el hogar estudiantes (n=6267)") +
@@ -484,7 +485,7 @@ skim(edad$edad) %>% pander()
 
 #Gráficos
 edad <- na.omit(edad)
-ggplot(data=edad, aes(edad)) + geom_histogram(aes(y =..density..),binwidth=1, colour="black") + ggtitle("Histograma edad de la muestra") +
+ggplot(data=edad, aes(edad)) + geom_histogram(aes(y =..density..),binwidth=1, colour="black") + ggtitle("Histograma edad de la muestra (n=5810)") +
   labs(x = "Edad", y = "Frecuencia") +
     stat_function(fun = dnorm, 
         args = list(mean = mean(edad[,1], na.rm = TRUE), 
@@ -496,7 +497,7 @@ edad$genero <-factor(edad$generopap, levels = c(0,1), labels = c("Padre", "Madre
 #Gráfico
 ggplot(data=edad, aes(edad)) + 
   geom_histogram(aes(y =..density..),binwidth=1, colour="black") +
-    facet_wrap(~generopap) +
+    facet_wrap(~genero) +
   ggtitle("Histograma Edad") +
   labs(x = "Edad", y = "Frecuencia") +
     stat_function(fun = dnorm, 
@@ -596,9 +597,9 @@ Dicho esto, se propone la siguiente asignación de categorías para los atributo
 + **Libros en el hogar**: variable categórica que identifica la cantidad de libros en el hogar según el informante a cargo del estudiante (padre/madre).
 
 ```{r librospa, echo=TRUE, eval=TRUE}
-#Libros en el hogar (estudiantes)
+#Libros en el hogar (padres)
 bbdd$librospap <- bbdd$pap11
-bbdd$librospap <-factor(bbdd$librospap, levels = c(1,2,3,4,5), labels = c("0 a 10", "10 a 25", "26 a 100", "101 a 200", "200 o más"))
+bbdd$librospap <-factor(bbdd$librospap, levels = c(1,2,3,4,5), labels = c("0 a 10", "11 a 25", "26 a 100", "101 a 200", "200 o más"))
 librospap <- subset(bbdd, select = c("librospap"))
 librospap <- na.omit(librospap)
 
@@ -617,7 +618,7 @@ datatable(libros_freq, rownames=FALSE, filter="none", options=list(pageLength=10
 
 #Graficamos cantidad de libros en el hogar
 ggplot(data=librospap, aes(librospap)) + geom_bar(aes(y = ((..count..)/sum(..count..))), stat="count", colour="black") + 
-  scale_x_discrete(labels = c("0 a 10","10 a 25","26 a 100","101 a 200","200 o más")) +     scale_y_continuous(labels = scales::percent) +
+  scale_x_discrete(labels = c("0 a 11","10 a 25","26 a 100","101 a 200","200 o más")) +     scale_y_continuous(labels = scales::percent) +
   geom_text(aes(label = scales::percent(((..count..)/sum(..count..))),
                    y= ((..count..)/sum(..count..))), stat= "count", vjust=-.5, size=3) +
   ggtitle("Libros en el hogar padres (n=6267)") +
@@ -884,14 +885,14 @@ alumnos <- ggplot(data=intpol, aes(intpol$intpol_al)) + geom_bar(aes(y = ((..cou
   scale_y_continuous(labels = scales::percent) +
   geom_text(aes(label = scales::percent(((..count..)/sum(..count..))),
                    y= ((..count..)/sum(..count..))), stat= "count", vjust=-.5, size=3) +
-  ggtitle("Interés política alumnos (n=6119)") +
+  ggtitle("Interés política: alumnos (n=6119)") +
   labs(x = "Nivel de interés", y = "%") 
 
 padres <- ggplot(data=intpol, aes(intpol$intpol_pap)) + geom_bar(aes(y = ((..count..)/sum(..count..))), stat="count", colour="black") + 
   scale_y_continuous(labels = scales::percent) +
   geom_text(aes(label = scales::percent(((..count..)/sum(..count..))),
                    y= ((..count..)/sum(..count..))), stat= "count", vjust=-.5, size=3) +
-  ggtitle("Interés política padres (n=6119)") +
+  ggtitle("Interés política: padres (n=6119)") +
   labs(x = "Nivel de interés", y = "%") 
 #Revisamos los gráficos
 ggarrange(alumnos, padres, ncol = 2, nrow = 1)
@@ -945,7 +946,7 @@ bbdd1 <- subset(bbdd, select = c("intpol_al", "intpol_pap", "puntaje", "sexo", "
 #bbdd2 <- na.omit(bbdd2)
 #cor(bbdd2)
 
-#1. Modelo original 
+#Modelos
 m1 <- lm(intpol_al~intpol_pap, data=bbdd1)
 m2 <- lm(intpol_al~intpol_pap + puntaje, data=bbdd1)
 m3 <- lm(intpol_al~intpol_pap + puntaje + sexo, data=bbdd1)
@@ -953,19 +954,39 @@ m4 <- lm(intpol_al~intpol_pap + puntaje + sexo + clima_esc, data=bbdd1)
 m5 <- lm(intpol_al~intpol_pap + puntaje + sexo + clima_esc + discusion, data=bbdd1)
 m6 <- lm(intpol_al~intpol_pap + puntaje + sexo + clima_esc + discusion + libros, data=bbdd1)
 m7 <- lm(intpol_al~intpol_pap + sexo + clima_esc + discusion + puntaje*libros,  data=bbdd1)
-
+m8 <- lm(intpol_al~intpol_pap + sexo + clima_esc + libros + puntaje*discusion,  data=bbdd1)
+m9 <- lm(intpol_al~intpol_pap + sexo + clima_esc + libros + discusion + intpol_pap*puntaje,  data=bbdd1)
+m10 <- lm(intpol_al~intpol_pap + puntaje + sexo + clima_esc + libros + intpol_pap*discusion,  data=bbdd1)
+m11 <- lm(intpol_al~intpol_pap + puntaje + sexo + libros + discusion + intpol_pap*clima_esc,  data=bbdd1)
 
 #Tabla con las regresiones
-stargazer(m1,m2,m3,m4,m5,m6,m7, title = "Modelos de regresión lineal interés político (estudiantes)",
-           covariate.labels=c("Interés politico (Padre)", "Hombre", "Clima Escolar", "Espacios de discusion", "Conocimiento Cívico", "Libros hogar: 10 a 25", "Libros hogar: 26 a 100", "Libros hogar: 101 a 200", "Libros hogar: 200 o más"),
-          column.labels=c("Modelo","Modelo","Modelo","Modelo","Modelo", "Modelo", "Modelo"), type ='html', font.size = "small", align = TRUE, omit.stat=c("f", "ser"), column.sep.width = "-15pt")
+stargazer(m1,m2,m3,m4,m5,m6,m7,m8,m9,m10,m11, title = "Modelos de regresión lineal interés político (estudiantes)",  order=c(1,2,4,5,7,10:13,3,6,8,9,14:17),
+          covariate.labels=c("Interés politico (Padre)", "Conocimiento cívico", "Hombre", "Clima Escolar", "Espacios de discusion", "Libros: 10 a 25", "Libros: 26 a 100", "Libros: 101 a 102", "Libros: 200 o más"),
+          column.labels=c("Modelo","Modelo","Modelo","Modelo","Modelo", "Modelo",
+                          "Modelo", "Modelo", "Modelo", "Modelo", "Modelo"), 
+          dep.var.caption  = "Variable Dependiente",
+          dep.var.labels   = "Interés en política (estudiante)",
+          type ='html', font.size = "small", align = TRUE, omit.stat=c("f", "ser"), column.sep.width = "-15pt")
 
 #Gráfico de interacciones 
-plot_model(m7, type = "int", title = "Interacción conocimiento cívico y libros en el hogar",
+plot_model(m7, type = "int",
+           title = "Interacción conocimiento cívico y libros en el hogar (n=5280)",
   axis.title = c("Puntaje", "Interés Político (alumnos)"), legend.title = "Libros en el hogar")
 
-#Gráfico de interacciones 
-rm(bbdd1,bbdd2, m1,m2,m3,m4,m5,m6,m7)
+plot_model(m8, type = "int",
+           title = "Interacción conocimiento cívico y discusión en la sala de clases (n=5244)", axis.title = c("Puntaje", "Interés Político (alumnos)"), legend.title = "Nivel de discusión en la sala de clases")
+
+plot_model(m9, type = "int",
+           title = "Interacción interés en política padres y conocimiento cívico (n=5244)", axis.title = c("Interés Político (padres)", "Interés Político (alumnos)"), legend.title = "Nivel de conocimiento cívico")
+
+plot_model(m10, type = "int",
+           title = "Interacción interés en política padres y discusión en la sala de clases (n=5244)", axis.title = c("Interés Político (padres)", "Interés Político (alumnos)"), legend.title = "Nivel de discusión en la sala de clases")
+
+plot_model(m11, type = "int",
+           title = "Interacción interés en política padres y clima escolar (n=5244)", axis.title = c("Interés Político (padres)", "Interés Político (alumnos)"), legend.title = "Clima escolar")
+
+#Removemos 
+rm(bbdd1,bbdd2, m1,m2,m3,m4,m5,m6,m7,m8,m9,m10,m11)
 ```
 
 + **Regresión Múltiple logística ordinal**:
@@ -976,36 +997,978 @@ bbdd1 <- subset(bbdd, select = c("intpol_alc", "intpol_papc", "puntaje", "sexo",
 
 #Modelos de regresión logístico ordinales
 library(MASS)
-m1 <- polr(intpol_alc~intpol_papc, data=bbdd1, Hess = TRUE)
-m2 <- polr(intpol_alc~intpol_papc + puntaje, data=bbdd1, Hess = TRUE)
-m3 <- polr(intpol_alc~intpol_papc + puntaje + sexo, data=bbdd1, Hess = TRUE)
-m4 <- polr(intpol_alc~intpol_papc + puntaje + sexo + clima_esc, data=bbdd1, Hess = TRUE)
+m1 <- polr(intpol_alc~intpol_papc, data=bbdd1,Hess = TRUE)
+m2 <- polr(intpol_alc~intpol_papc + puntaje, data=bbdd1,Hess = TRUE)
+m3 <- polr(intpol_alc~intpol_papc + puntaje + sexo, data=bbdd1,Hess = TRUE)
+m4 <- polr(intpol_alc~intpol_papc + puntaje + sexo + clima_esc, data=bbdd1,Hess = TRUE)
 m5 <- polr(intpol_alc~intpol_papc + puntaje + sexo + clima_esc + discusion, data=bbdd1, Hess = TRUE)
-m6 <- polr(intpol_alc~intpol_papc + puntaje + sexo + clima_esc + discusion + libros, data=bbdd1, Hess = TRUE)
-m7 <- polr(intpol_alc~intpol_papc + sexo + clima_esc + discusion + puntaje*libros,  data=bbdd1, Hess = TRUE)
+m6 <- polr(intpol_alc~intpol_papc + puntaje + sexo + clima_esc + discusion + libros, data=bbdd1,Hess = TRUE)
+m7 <- polr(intpol_alc~intpol_papc + sexo + clima_esc + discusion + puntaje*libros,  data=bbdd1,Hess = TRUE)
+m8 <- polr(intpol_alc~intpol_papc + sexo + clima_esc + libros + puntaje*discusion,  data=bbdd1,Hess = TRUE)
+m9 <- polr(intpol_alc~intpol_papc + sexo + clima_esc + libros + discusion + intpol_papc*puntaje,  data=bbdd1,Hess = TRUE)
+m10 <- polr(intpol_alc~intpol_papc + puntaje + sexo + clima_esc + libros + intpol_papc*discusion,  data=bbdd1,Hess = TRUE)
+m11 <- polr(intpol_alc~intpol_papc + puntaje + sexo + libros + discusion + intpol_papc*clima_esc,  data=bbdd1,Hess = TRUE)
 
-#Modelo de regresión losgístico ordinal 
-stargazer(m1,m2,m3,m4,m5,m6,m7, title = "Modelos logísticos ordinales interés político (estudiantes)",
-          column.labels=c("Modelo","Modelo","Modelo","Modelo","Modelo", "Modelo", "Modelo"), 
-          covariate.labels=c("Interés politico (Padre):Poco", "Interés politico (Padre):Bastante", "Interés politico (Padre):Mucho", "Conocimiento cívico", "Hombre", "Clima Escolar", "Espacios de discusion", "Libros hogar: 10 a 25", "Libros hogar: 26 a 100", "Libros hogar: 101 a 200", "Libros hogar: 200 o más"),
+#Modelo de regresión logístico ordinal 
+stargazer(m1,m2,m3,m4,m5,m6,m7,m8,m9,m10,m11, title = "Modelos logísticos ordinales interés político (estudiantes)", order = c(1:4,8:9,13,18:21,5:7,10:12,14:17,22:28),
+          column.labels=c("Modelo","Modelo","Modelo","Modelo","Modelo", "Modelo", "Modelo"), covariate.labels=c("Interés politico (Padre):Poco", "Interés politico (Padre):Bastante", "Interés politico (Padre):Mucho", "Conocimiento cívico", "Hombre", "Clima Escolar", "Espacios de discusion", "Libros hogar: 11 a 25", "Libros hogar: 26 a 100", "Libros hogar: 101 a 200", "Libros hogar: 200 o más"),
+           dep.var.caption  = "Variable Dependiente",
+          dep.var.labels   = "Interés en política (estudiante)",
           type ='html', font.size = "small", align = TRUE, column.sep.width = "-15pt", ord.intercepts = T, style="all2")
 
 
 #Gráfico de interacciones 
-plot_model(m7, type = "int", title = "Interacción conocimiento cívico y libros en el hogar", axis.title = c("Puntaje", "Interés Político (alumnos)"), legend.title = "Libros en el hogar")
+plot_model(m7, type = "int",
+           title = "Interacción conocimiento cívico y libros en el hogar (n=5208)",
+  axis.title = c("Puntaje", "Interés Político (alumnos)"), legend.title = "Libros en el hogar")
 
-#Gráfico de interacciones 
-rm(bbdd1,bbdd2, m1,m2,m3,m4,m5,m6,m7)
+plot_model(m8, type = "int",
+           title = "Interacción conocimiento cívico y discusión en la sala de clases (n=5244)", axis.title = c("Puntaje", "Interés Político (alumnos)"), legend.title = "Nivel de discusión en la sala de clases")
+
+plot_model(m9, type = "int",
+           title = "Interacción interés en política padres y conocimiento cívico (n=5244)", axis.title = c("Interés Político (padres)", "Interés Político (alumnos)"), legend.title = "Nivel de conocimiento cívico")
+
+plot_model(m10, type = "int",
+           title = "Interacción interés en política padres y discusión en la sala de clases (n=5244)", axis.title = c("Interés Político (padres)", "Interés Político (alumnos)"), legend.title = "Nivel de discusión en la sala de clases")
+
+plot_model(m11, type = "int",
+           title = "Interacción interés en política padres y clima escolar (n=5244)", axis.title = c("Interés Político (padres)", "Interés Político (alumnos)"), legend.title = "Clima escolar")
+
+#Removemos
+rm(bbdd1,bbdd2, m1,m2,m3,m4,m5,m6,m7,m8,m9,m10,m11)
+```
+
+---
+
+## Ideas autoritarias 
+
+Para esta sección se realizó una selección de las 4 variables más relevantes según los objetivos del proyecto:
+
+      Las dictaduras se justifican cuando traen beneficios económicos	
+      La concentración del poder en una sola persona garantiza el orden y la seguridad
+      El gobierno debería cerrar los medios de comunicación que lo critiquen	
+      Si el presidente no está de acuerdo con el Congreso debería disolverlo
+      
+      1. Muy en desacuerdo
+      2. En desacuerdo
+      3. De acuerdo
+      4. Muy de acuerdo
+      
+### 1. Las dictaduras se justifican cuando traen beneficios económicos 
+
++ **Descriptivos**:
+
+```{r dicta, echo=TRUE, eval=TRUE}
+#Generamos variables: Las dictaduras se justifican cuando traen beneficios económicos
+bbdd$dicta_al <- bbdd$alp28_2
+bbdd$dicta_pap <- bbdd$pap19_4
+dicta <- subset(bbdd, select = c("dicta_al", "dicta_pap"))
+skim(dicta) %>% pander()
+
+#Removemos missing
+dicta <- na.omit(dicta)
+dicta$dicta_al <-factor(dicta$dicta_al, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
+dicta$dicta_pap <-factor(dicta$dicta_pap, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
+
+#Frecuencias Estudiantes
+dicta_freqal <- dicta %>%
+  group_by(dicta$dicta_al)%>%
+  summarize(n=n())%>%
+  mutate(prop=n/sum(n)*100) 
+dicta_freqal$prop <- round(dicta_freqal$prop, digits = 1)
+total <- c("Total", 5453, 100)
+dicta_freqal <- rbind(dicta_freqal, total)
+#Tabla
+colnames(dicta_freqal) <- c("Se justifican las dictaduras por beneficios económicos (estudiantes)", "Observaciones", "%")
+datatable(dicta_freqal, rownames=F, filter="none", options=list(pageLength=10, scro11X=TRUE), style="default", class="compact")
+
+#Frecuencias padres
+dicta_freqpap <- dicta %>%
+  group_by(dicta$dicta_pap)%>%
+  summarize(n=n())%>%
+  mutate(prop=n/sum(n)*100) 
+dicta_freqpap$prop <- round(dicta_freqpap$prop, digits = 1)
+total <- c("Total", 5453, 100)
+dicta_freqpap <- rbind(dicta_freqpap, total)
+#Tabla
+colnames(dicta_freqpap) <- c("Se justifican las dictaduras por beneficios económicos (padres)", "Observaciones", "%")
+datatable(dicta_freqpap, rownames=F, filter="none", options=list(pageLength=10, scro11X=TRUE), style="default", class="compact")
+
+#Gráfico 
+alumnos <- ggplot(data=dicta, aes(dicta$dicta_al)) + geom_bar(aes(y = ((..count..)/sum(..count..))), stat="count", colour="black") + 
+  scale_y_continuous(labels = scales::percent) +
+  geom_text(aes(label = scales::percent(((..count..)/sum(..count..))),
+                   y= ((..count..)/sum(..count..))), stat= "count", vjust=-.5, size=3) +
+  ggtitle("Justificación por beneficios económicos: alumnos (n=5453)") +
+  theme(plot.title = element_text(size = 9),axis.text.x = element_text(size = 9)) +
+  labs(x = "Nivel de acuerdo", y = "%") 
+
+padres <- ggplot(data=dicta, aes(dicta$dicta_pap)) + geom_bar(aes(y = ((..count..)/sum(..count..))), stat="count", colour="black") + 
+  scale_y_continuous(labels = scales::percent) +
+  geom_text(aes(label = scales::percent(((..count..)/sum(..count..))),
+                   y= ((..count..)/sum(..count..))), stat= "count", vjust=-.5, size=3) +
+  ggtitle("Justificación por beneficios económicos: padres (n=5453)") +
+  theme(plot.title = element_text(size = 9),axis.text.x = element_text(size = 9)) +
+  labs(x = "Nivel de acuerdo", y = "%") 
+#Revisamos los gráficos
+ggarrange(alumnos, padres, ncol = 2, nrow = 1)
 ```
 
 
-## Percepción sobre la democracia
++ **Correlaciones Policóricas**: Se presentan correlaciones asumiendo la variable como categórica (tabla de correlaciones) y como continua (gráfico de asociación de las variables).
+
+```{r dicta2, echo=TRUE, eval=TRUE}
+#Asociaciones
+#Correlaciones Policóricas
+dicta$dicta_al1 <- as.numeric(dicta$dicta_al)
+dicta$dicta_pap1 <- as.numeric(dicta$dicta_pap)
+dicta2 <- subset(dicta, select = c("dicta_al1", "dicta_pap1"))
+cor <- polychoric(dicta2, na.rm=TRUE)
+cor <- cor[["rho"]]
+cor <- round(cor,2)
+#Tabla
+colnames(cor) <- c("Justificación Alumnos", "Justificación Padres")
+rownames(cor) <- c("Justificación Alumnos", "Justificación Padres")
+datatable(cor, rownames=T, filter="none", options=list(pageLength=10, scro11X=TRUE), style="default", class="compact")
+
+#Gráfico de asociación 
+ggplot(dicta2, aes(x=dicta_pap1,y=dicta_al1)) +
+geom_point(position=position_jitter(w=0.1,h=0)) +
+geom_smooth(method="lm", se=FALSE) +
+xlab('Justificación Dictadura Padres') +
+ylab('Justificación Dictadura Hijos') +
+stat_cor(label.x = 3.49999, label.y = 3.5) 
+
+#Removemos
+rm(dicta, dicta2, dicta_freqal, dicta_freqpap, total, alumnos, padres, cor)
+```
+
++ **Regresión Múltiple lineal**: Se presentan un modelo que asume la variable dependiente e independiente del modelo como continuas y otro modelo asumiendo dichas variables como categóricas ordinales. 
+
+```{r dicta3, echo=TRUE, eval=TRUE, warning=FALSE, results = "asis"}
+#Ajustamos variable
+#Variable continua
+Hmisc::label(bbdd$dicta_al) <- 'Justificación Dictadura (Alumnos)'
+Hmisc::label(bbdd$dicta_pap) <- 'Justificación Dictadura (Padres)'
+#Variable Categórica
+bbdd$dicta_alc <-factor(bbdd$dicta_al, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "En desacuerdo", "De acuerdo", "Muy de acuerdo"))
+bbdd$dicta_papc <-factor(bbdd$dicta_pap, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "En desacuerdo", "De acuerdo", "Muy de acuerdo"))
+
+#Modelo de regresión múltiple lineal
+#Base de datos para estimación
+bbdd1 <- subset(bbdd, select = c("dicta_al", "dicta_pap", "puntaje", "sexo", "clima_esc", "discusion", "educmadre", "educpadre", "libros"))
+
+#bbdd2 <- subset(bbdd, select = c("dicta_al", "dicta_pap", "puntaje", "clima_esc", "discusion", "educmadre", "libros"))
+#bbdd2$libros <- as.numeric(bbdd2$libros)
+#bbdd2 <- na.omit(bbdd2)
+#cor(bbdd2)
+
+#1. Modelo original 
+m1 <- lm(dicta_al~dicta_pap, data=bbdd1)
+m2 <- lm(dicta_al~dicta_pap + puntaje, data=bbdd1)
+m3 <- lm(dicta_al~dicta_pap + puntaje + sexo, data=bbdd1)
+m4 <- lm(dicta_al~dicta_pap + puntaje + sexo + clima_esc, data=bbdd1)
+m5 <- lm(dicta_al~dicta_pap + puntaje + sexo + clima_esc + discusion, data=bbdd1)
+m6 <- lm(dicta_al~dicta_pap + puntaje + sexo + clima_esc + discusion + libros, data=bbdd1)
+m7 <- lm(dicta_al~dicta_pap + sexo + clima_esc + discusion + puntaje*libros,  data=bbdd1)
+m8 <- lm(dicta_al~dicta_pap + sexo + clima_esc + libros + puntaje*discusion,  data=bbdd1)
+m9 <- lm(dicta_al~dicta_pap + sexo + clima_esc + libros + discusion + dicta_pap*puntaje,  data=bbdd1)
+m10 <- lm(dicta_al~dicta_pap + puntaje + sexo + clima_esc + libros + dicta_pap*discusion,  data=bbdd1)
+m11 <- lm(dicta_al~dicta_pap + puntaje + sexo + libros + discusion + dicta_pap*clima_esc,  data=bbdd1)
+
+#Tabla con las regresiones
+stargazer(m1,m2,m3,m4,m5,m6,m7,m8,m9,m10,m11, title = "Modelos de regresión lineal justificación de la dictadura (estudiantes)",order=c(1,2,4,5,7,10:13,3,6,8,9,14:17),
+           covariate.labels=c("Justificación Dictadura (Padre)", "Conocimiento cívico", "Hombre", "Clima Escolar", "Espacios de discusion", "Libros hogar: 11 a 25", "Libros hogar: 26 a 100", "Libros hogar: 101 a 200", "Libros hogar: 200 o más"),
+          column.labels=c("Modelo","Modelo","Modelo","Modelo","Modelo", "Modelo", "Modelo", "Modelo", "Modelo", "Modelo", "Modelo"), 
+          dep.var.caption  = "Variable Dependiente",
+          dep.var.labels   = "Justificación de la dictadura por beneficios económicos (estudiante)",
+          type ='html', font.size = "small", align = TRUE, omit.stat=c("f", "ser"), column.sep.width = "-15pt")
+
+#Gráfico de interacciones 
+plot_model(m7, type = "int",
+           title = "Interacción conocimiento cívico y libros en el hogar (n=5280)",
+  axis.title = c("Puntaje", "Justificación Dictadura (alumnos)"), legend.title = "Libros en el hogar")
+
+plot_model(m8, type = "int",
+           title = "Interacción conocimiento cívico y discusión en la sala de clases (n=5244)", axis.title = c("Puntaje", "Justificación Dictadura (alumnos)"), legend.title = "Nivel de discusión en la sala de clases")
+
+plot_model(m9, type = "int",
+           title = "Interacción justificación dictadura padres y conocimiento cívico (n=5244)", axis.title = c("Justificación Dictadura (padres)", "Justificación Dictadura (alumnos)"), legend.title = "Nivel de conocimiento cívico")
+
+plot_model(m10, type = "int",
+           title = "Interacción justificación dictadura padres y discusión en la sala de clases (n=5244)", axis.title = c("Justificación Dictadura (padres)", "Justificación Dictadura (alumnos)"), legend.title = "Nivel de discusión en la sala de clases")
+
+plot_model(m11, type = "int",
+           title = "Interacción justificación dictadura padres y clima escolar (n=5244)", axis.title = c("Justificación Dictadura (padres)", "Justificación Dictadura (alumnos)"), legend.title = "Clima escolar")
+
+
+#Gráfico de interacciones 
+rm(bbdd1,bbdd2, m1,m2,m3,m4,m5,m6,m7,m8,m9,m10,m11)
+```
+
+
++ **Regresión Múltiple logística ordinal**:
+
+```{r dicta4, echo=TRUE, eval=TRUE, warning=FALSE, results = "asis"}
+#Base de datos con nuestras variables
+bbdd1 <- subset(bbdd, select = c("dicta_alc", "dicta_papc", "puntaje", "sexo", "clima_esc", "discusion", "educmadre", "educpadre", "libros"))
+
+#Modelos de regresión logístico ordinales
+library(MASS)
+m1 <- polr(dicta_alc~dicta_papc, data=bbdd1,Hess = TRUE)
+m2 <- polr(dicta_alc~dicta_papc + puntaje, data=bbdd1,Hess = TRUE)
+m3 <- polr(dicta_alc~dicta_papc + puntaje + sexo, data=bbdd1,Hess = TRUE)
+m4 <- polr(dicta_alc~dicta_papc + puntaje + sexo + clima_esc, data=bbdd1,Hess = TRUE)
+m5 <- polr(dicta_alc~dicta_papc + puntaje + sexo + clima_esc + discusion, data=bbdd1, Hess = TRUE)
+m6 <- polr(dicta_alc~dicta_papc + puntaje + sexo + clima_esc + discusion + libros, data=bbdd1,Hess = TRUE)
+m7 <- polr(dicta_alc~dicta_papc + sexo + clima_esc + discusion + puntaje*libros,  data=bbdd1,Hess = TRUE)
+m8 <- polr(dicta_alc~dicta_papc + sexo + clima_esc + libros + puntaje*discusion,  data=bbdd1,Hess = TRUE)
+m9 <- polr(dicta_alc~dicta_papc + sexo + clima_esc + libros + discusion + dicta_papc*puntaje,  data=bbdd1,Hess = TRUE)
+m10 <- polr(dicta_alc~dicta_papc + puntaje + sexo + clima_esc + libros + dicta_papc*discusion,  data=bbdd1,Hess = TRUE)
+m11 <- polr(dicta_alc~dicta_papc + puntaje + sexo + libros + discusion + dicta_papc*clima_esc,  data=bbdd1,Hess = TRUE)
+
+#Modelo de regresión logístico ordinal 
+stargazer(m1,m2,m3,m4,m5,m6,m7,m8,m9,m10,m11, title = "Modelos logísticos ordinales justificación dictadura (estudiantes)", order = c(1:4,8:9,13,18:21,5:7,10:12,14:17,22:28),
+          column.labels=c("Modelo","Modelo","Modelo","Modelo","Modelo", "Modelo", "Modelo"), covariate.labels=c("Justificación dictadura (Padre): En desacuerdo", "Justificación dictadura (Padre): De acuerdo", "Justificación dictadura (Padre): Muy de acuerdo", "Conocimiento cívico", "Hombre", "Clima Escolar", "Espacios de discusion", "Libros hogar: 11 a 25", "Libros hogar: 26 a 100", "Libros hogar: 101 a 200", "Libros hogar: 200 o más"),
+           dep.var.caption  = "Variable Dependiente",
+          dep.var.labels   = "Justificación de la dictadura por beneficios económicos (estudiante)",
+          type ='html', font.size = "small", align = TRUE, column.sep.width = "-15pt", ord.intercepts = T, style="all2")
+
+#Gráfico de interacciones 
+plot_model(m7, type = "int",
+           title = "Interacción conocimiento cívico y libros en el hogar (n=4688)",
+  axis.title = c("Puntaje", "Justificación Dictadura (alumnos)"), legend.title = "Libros en el hogar", value.size=0.3)
+
+plot_model(m8, type = "int",
+           title = "Interacción conocimiento cívico y discusión en la sala de clases (n=4688)", axis.title = c("Puntaje", "Justificación Dictadura (alumnos)"), legend.title = "Discusión en sala", value.size=0.3)
+
+plot_model(m9, type = "int",
+           title = "Interacción justificación dictadura padres y conocimiento cívico (n=4688)", axis.title = c("Justificación Dictadura (padres)", "Justificación Dictadura (alumnos)"), legend.title = "Conocimiento cívico", value.size=0.3)
+
+plot_model(m10, type = "int",
+           title = "Interacción justificación dictadura padres y discusión en la sala de clases (n=4688)", axis.title = c("Justificación Dictadura (padres)", "Justificación Dictadura (alumnos)"), legend.title = "Discusión en sala", value.size=0.3)
+
+plot_model(m11, type = "int",
+           title = "Interacción justificación dictadura padres y clima escolar (n=4688)", axis.title = c("Justificación Dictadura (padres)", "Justificación Dictadura (alumnos)"), legend.title = "Clima escolar", value.size=0.3)
+
+#Removemos
+rm(bbdd1,bbdd2, m1,m2,m3,m4,m5,m6,m7,m8,m9,m10,m11)
+```
+
+---
+
+### 2. La concentración del poder en una sola persona garantiza el orden y la seguridad      
++ **Descriptivos**:
+
+```{r dicta21, echo=TRUE, eval=TRUE}
+#Generamos variables: La concentración del poder en una sola persona garantiza el orden y la seguridad 
+bbdd$dicta2_al <- bbdd$alp28_4
+bbdd$dicta2_pap <- bbdd$pap19_5
+dicta <- subset(bbdd, select = c("dicta2_al", "dicta2_pap"))
+skim(dicta) %>% pander()
+
+#Removemos missing
+dicta <- na.omit(dicta)
+dicta$dicta2_al <-factor(dicta$dicta2_al, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
+dicta$dicta2_pap <-factor(dicta$dicta2_pap, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
+
+#Frecuencias Estudiantes
+dicta_freqal <- dicta %>%
+  group_by(dicta$dicta2_al)%>%
+  summarize(n=n())%>%
+  mutate(prop=n/sum(n)*100) 
+dicta_freqal$prop <- round(dicta_freqal$prop, digits = 1)
+total <- c("Total", 5401, 100)
+dicta_freqal <- rbind(dicta_freqal, total)
+#Tabla
+colnames(dicta_freqal) <- c("La concentración del poder solo en uno garantiza el orden y la seguridad (estudiantes)", "Observaciones", "%")
+datatable(dicta_freqal, rownames=F, filter="none", options=list(pageLength=10, scro11X=TRUE), style="default", class="compact")
+
+#Frecuencias padres
+dicta_freqpap <- dicta %>%
+  group_by(dicta$dicta2_pap)%>%
+  summarize(n=n())%>%
+  mutate(prop=n/sum(n)*100) 
+dicta_freqpap$prop <- round(dicta_freqpap$prop, digits = 1)
+total <- c("Total", 5401, 100)
+dicta_freqpap <- rbind(dicta_freqpap, total)
+#Tabla
+colnames(dicta_freqpap) <- c("La concentración del poder solo en uno garantiza el orden y la seguridad (padres)", "Observaciones", "%")
+datatable(dicta_freqpap, rownames=F, filter="none", options=list(pageLength=10, scro11X=TRUE), style="default", class="compact")
+
+#Gráfico 
+alumnos <- ggplot(data=dicta, aes(dicta$dicta2_al)) + geom_bar(aes(y = ((..count..)/sum(..count..))), stat="count", colour="black") + 
+  scale_y_continuous(labels = scales::percent) +
+  geom_text(aes(label = scales::percent(((..count..)/sum(..count..))),
+                   y= ((..count..)/sum(..count..))), stat= "count", vjust=-.5, size=3) +
+  ggtitle("Concentración del poder: alumnos (n=5401)") +
+  theme(plot.title = element_text(size = 9),axis.text.x = element_text(size = 9)) +
+  labs(x = "Nivel de acuerdo", y = "%") 
+
+padres <- ggplot(data=dicta, aes(dicta$dicta2_pap)) + geom_bar(aes(y = ((..count..)/sum(..count..))), stat="count", colour="black") + 
+  scale_y_continuous(labels = scales::percent) +
+  geom_text(aes(label = scales::percent(((..count..)/sum(..count..))),
+                   y= ((..count..)/sum(..count..))), stat= "count", vjust=-.5, size=3) +
+  ggtitle("Concentración del poder: padres (n=5401)") +
+  theme(plot.title = element_text(size = 9),axis.text.x = element_text(size = 9)) +
+  labs(x = "Nivel de acuerdo", y = "%") 
+#Revisamos los gráficos
+ggarrange(alumnos, padres, ncol = 2, nrow = 1)
+```
+
+
++ **Correlaciones Policóricas**: Se presentan correlaciones asumiendo la variable como categórica (tabla de correlaciones) y como continua (gráfico de asociación de las variables).
+
+```{r dicta22, echo=TRUE, eval=TRUE}
+#Asociaciones
+#Correlaciones Policóricas
+dicta$dicta2_al1 <- as.numeric(dicta$dicta2_al)
+dicta$dicta2_pap1 <- as.numeric(dicta$dicta2_pap)
+dicta2 <- subset(dicta, select = c("dicta2_al1", "dicta2_pap1"))
+cor <- polychoric(dicta2, na.rm=TRUE)
+cor <- cor[["rho"]]
+cor <- round(cor,2)
+#Tabla
+colnames(cor) <- c("Concentración del poder (alumnos)", "Concentración del poder (padres)")
+rownames(cor) <- c("Concentración del poder (alumnos)", "Concentración del poder (padres)")
+datatable(cor, rownames=T, filter="none", options=list(pageLength=10, scro11X=TRUE), style="default", class="compact")
+
+#Gráfico de asociación 
+ggplot(dicta2, aes(x=dicta2_pap1,y=dicta2_al1)) +
+geom_point(position=position_jitter(w=0.1,h=0)) +
+geom_smooth(method="lm", se=FALSE) +
+xlab('Justificación Dictadura Padres') +
+ylab('Justificación Dictadura Hijos') +
+stat_cor(label.x = 3.49999, label.y = 3.5) 
+
+#Removemos
+rm(dicta, dicta2, dicta_freqal, dicta_freqpap, total, alumnos, padres, cor)
+```
+
++ **Regresión Múltiple lineal**: Se presentan un modelo que asume la variable dependiente e independiente del modelo como continuas y otro modelo asumiendo dichas variables como categóricas ordinales. 
+
+```{r dicta23, echo=TRUE, eval=TRUE, warning=FALSE, results = "asis"}
+#Ajustamos variable
+#Variable continua
+Hmisc::label(bbdd$dicta2_al) <- 'Concentración del poder (Alumnos)'
+Hmisc::label(bbdd$dicta2_pap) <- 'Concentración del poder (Padres)'
+#Variable Categórica
+bbdd$dicta2_alc <-factor(bbdd$dicta2_al, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "En desacuerdo", "De acuerdo", "Muy de acuerdo"))
+bbdd$dicta2_papc <-factor(bbdd$dicta2_pap, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "En desacuerdo", "De acuerdo", "Muy de acuerdo"))
+
+#Modelo de regresión múltiple lineal
+#Base de datos para estimación
+bbdd1 <- subset(bbdd, select = c("dicta2_al", "dicta2_pap", "puntaje", "sexo", "clima_esc", "discusion", "educmadre", "educpadre", "libros"))
+
+#bbdd2 <- subset(bbdd, select = c("dicta_al", "dicta_pap", "puntaje", "clima_esc", "discusion", "educmadre", "libros"))
+#bbdd2$libros <- as.numeric(bbdd2$libros)
+#bbdd2 <- na.omit(bbdd2)
+#cor(bbdd2)
+
+#1. Modelo original 
+m1 <- lm(dicta2_al~dicta2_pap, data=bbdd1)
+m2 <- lm(dicta2_al~dicta2_pap + puntaje, data=bbdd1)
+m3 <- lm(dicta2_al~dicta2_pap + puntaje + sexo, data=bbdd1)
+m4 <- lm(dicta2_al~dicta2_pap + puntaje + sexo + clima_esc, data=bbdd1)
+m5 <- lm(dicta2_al~dicta2_pap + puntaje + sexo + clima_esc + discusion, data=bbdd1)
+m6 <- lm(dicta2_al~dicta2_pap + puntaje + sexo + clima_esc + discusion + libros, data=bbdd1)
+m7 <- lm(dicta2_al~dicta2_pap + sexo + clima_esc + discusion + puntaje*libros,  data=bbdd1)
+m8 <- lm(dicta2_al~dicta2_pap + sexo + clima_esc + libros + puntaje*discusion,  data=bbdd1)
+m9 <- lm(dicta2_al~dicta2_pap + sexo + clima_esc + libros + discusion + dicta2_pap*puntaje,  data=bbdd1)
+m10 <- lm(dicta2_al~dicta2_pap + puntaje + sexo + clima_esc + libros + dicta2_pap*discusion,  data=bbdd1)
+m11 <- lm(dicta2_al~dicta2_pap + puntaje + sexo + libros + discusion + dicta2_pap*clima_esc,  data=bbdd1)
+
+#Tabla con las regresiones
+stargazer(m1,m2,m3,m4,m5,m6,m7,m8,m9,m10,m11, title = "Modelos de regresión lineal concetración del poder (estudiantes)",order=c(1,2,4,5,7,10:13,3,6,8,9,14:17),
+           covariate.labels=c("Concentración del poder (Padre)", "Conocimiento cívico", "Hombre", "Clima Escolar", "Espacios de discusion", "Libros hogar: 11 a 25", "Libros hogar: 26 a 100", "Libros hogar: 101 a 200", "Libros hogar: 200 o más"),
+          column.labels=c("Modelo","Modelo","Modelo","Modelo","Modelo", "Modelo", "Modelo", "Modelo", "Modelo", "Modelo", "Modelo"), 
+          dep.var.caption  = "Variable Dependiente",
+          dep.var.labels   = "La concentración del poder en una sola persona garantiza el orden y la seguridad",
+          type ='html', font.size = "small", align = TRUE, omit.stat=c("f", "ser"), column.sep.width = "-15pt")
+
+#Gráfico de interacciones 
+plot_model(m7, type = "int",
+           title = "Interacción conocimiento cívico y libros en el hogar (n=4666)",
+  axis.title = c("Puntaje", "Justificación Dictadura (alumnos)"), legend.title = "Libros en el hogar")
+
+plot_model(m8, type = "int",
+           title = "Interacción conocimiento cívico y discusión en la sala de clases (n=4666)", axis.title = c("Puntaje", "Justificación Dictadura (alumnos)"), legend.title = "Nivel de discusión en la sala de clases")
+
+plot_model(m9, type = "int",
+           title = "Interacción concentración del poder padres y conocimiento cívico (n=4666)", axis.title = c("Justificación Dictadura (padres)", "Justificación Dictadura (alumnos)"), legend.title = "Nivel de conocimiento cívico")
+
+plot_model(m10, type = "int",
+           title = "Interacción concentración del poder padres y discusión en la sala de clases (n=4666)", axis.title = c("Justificación Dictadura (padres)", "Justificación Dictadura (alumnos)"), legend.title = "Nivel de discusión en la sala de clases")
+
+plot_model(m11, type = "int",
+           title = "Interacción concentración del poder padres y clima escolar (n=4666", axis.title = c("Justificación Dictadura (padres)", "Justificación Dictadura (alumnos)"), legend.title = "Clima escolar")
+
+
+#Removemos
+rm(bbdd1,bbdd2, m1,m2,m3,m4,m5,m6,m7,m8,m9,m10,m11)
+```
+
++ **Regresión Múltiple logística ordinal**:
+
+```{r dicta24, echo=TRUE, eval=TRUE, warning=FALSE, results = "asis"}
+#Base de datos con nuestras variables
+bbdd1 <- subset(bbdd, select = c("dicta2_alc", "dicta2_papc", "puntaje", "sexo", "clima_esc", "discusion", "educmadre", "educpadre", "libros"))
+
+#Modelos de regresión logístico ordinales
+library(MASS)
+m1 <- polr(dicta2_alc~dicta2_papc, data=bbdd1,Hess = TRUE)
+m2 <- polr(dicta2_alc~dicta2_papc + puntaje, data=bbdd1,Hess = TRUE)
+m3 <- polr(dicta2_alc~dicta2_papc + puntaje + sexo, data=bbdd1,Hess = TRUE)
+m4 <- polr(dicta2_alc~dicta2_papc + puntaje + sexo + clima_esc, data=bbdd1,Hess = TRUE)
+m5 <- polr(dicta2_alc~dicta2_papc + puntaje + sexo + clima_esc + discusion, data=bbdd1, Hess = TRUE)
+m6 <- polr(dicta2_alc~dicta2_papc + puntaje + sexo + clima_esc + discusion + libros, data=bbdd1,Hess = TRUE)
+m7 <- polr(dicta2_alc~dicta2_papc + sexo + clima_esc + discusion + puntaje*libros,  data=bbdd1,Hess = TRUE)
+m8 <- polr(dicta2_alc~dicta2_papc + sexo + clima_esc + libros + puntaje*discusion,  data=bbdd1,Hess = TRUE)
+m9 <- polr(dicta2_alc~dicta2_papc + sexo + clima_esc + libros + discusion + dicta2_papc*puntaje,  data=bbdd1,Hess = TRUE)
+m10 <- polr(dicta2_alc~dicta2_papc + puntaje + sexo + clima_esc + libros + dicta2_papc*discusion,  data=bbdd1,Hess = TRUE)
+m11 <- polr(dicta2_alc~dicta2_papc + puntaje + sexo + libros + discusion + dicta2_papc*clima_esc,  data=bbdd1,Hess = TRUE)
+
+#Modelo de regresión logístico ordinal 
+stargazer(m1,m2,m3,m4,m5,m6,m7,m8,m9,m10,m11, title = "Modelos logísticos ordinales para concentración del poder (estudiantes)", order = c(1:4,8:9,13,18:21,5:7,10:12,14:17,22:28),
+          column.labels=c("Modelo","Modelo","Modelo","Modelo","Modelo", "Modelo", "Modelo"), covariate.labels=c("Concentración del poder (Padre): En desacuerdo", "Concentración del poder (Padre): De acuerdo", "Concentración del poder (Padre):Muy de acuerdo", "Conocimiento cívico", "Hombre", "Clima Escolar", "Espacios de discusion", "Libros hogar: 11 a 25", "Libros hogar: 26 a 100", "Libros hogar: 101 a 200", "Libros hogar: 200 o más"),
+           dep.var.caption  = "Variable Dependiente",
+          dep.var.labels   = "La concentración del poder en una sola persona garantiza el orden y la seguridad",
+          type ='html', font.size = "small", align = TRUE, column.sep.width = "-15pt", ord.intercepts = T, style="all2")
+
+#Gráfico de interacciones 
+plot_model(m7, type = "int",
+           title = "Interacción conocimiento cívico y libros en el hogar (n=4666)",
+  axis.title = c("Puntaje", "Concentración del poder (alumnos)"), legend.title = "Libros en el hogar", value.size=0.3)
+
+plot_model(m8, type = "int",
+           title = "Interacción conocimiento cívico y discusión en la sala de clases (n=4666)", axis.title = c("Puntaje", "Concentración del poder (alumnos)"), legend.title = "Discusión en sala", value.size=0.3)
+
+plot_model(m9, type = "int",
+           title = "Interacción concentración del poder (padres) y conocimiento cívico (n=4666)", axis.title = c("Concentración del poder (padres)", "Concentración del poder (alumnos)"), legend.title = "Conocimiento cívico", value.size=0.3)
+
+plot_model(m10, type = "int",
+           title = "Interacción concentración del poder (padres) y discusión en la sala de clases (n=4666)", axis.title = c("Concentración del poder (padres)", "Concentración del poder (alumnos)"), legend.title = "Discusión en sala", value.size=0.3)
+
+plot_model(m11, type = "int",
+           title = "Interacción concentración del poder (padres) y clima escolar (n=4666)", axis.title = c("Concentración del poder (padres)", "Concentración del poder (alumnos)"), legend.title = "Clima escolar", value.size=0.3)
+
+#Removemos
+rm(bbdd1,bbdd2, m1,m2,m3,m4,m5,m6,m7,m8,m9,m10,m11)
+```
+
+---
+
+### 3. El gobierno debería cerrar los medios de comunicación que lo critiquen
+
++ **Descriptivos**:
+
+```{r dicta31, echo=TRUE, eval=TRUE}
+#Generamos variables: El gobierno debería cerrar los medios de comunicación que lo critiquen
+bbdd$dicta3_al <- bbdd$alp28_6
+bbdd$dicta3_pap <- bbdd$pap19_6
+dicta <- subset(bbdd, select = c("dicta3_al", "dicta3_pap"))
+skim(dicta) %>% pander()
+
+#Removemos missing
+dicta <- na.omit(dicta)
+dicta$dicta3_al <-factor(dicta$dicta3_al, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
+dicta$dicta3_pap <-factor(dicta$dicta3_pap, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
+
+#Frecuencias Estudiantes
+dicta_freqal <- dicta %>%
+  group_by(dicta$dicta3_al)%>%
+  summarize(n=n())%>%
+  mutate(prop=n/sum(n)*100) 
+dicta_freqal$prop <- round(dicta_freqal$prop, digits = 1)
+total <- c("Total", 5435, 100)
+dicta_freqal <- rbind(dicta_freqal, total)
+#Tabla
+colnames(dicta_freqal) <- c("El gobierno debería cerrar los medios de comunicación que lo critiquen (estudiantes)", "Observaciones", "%")
+datatable(dicta_freqal, rownames=F, filter="none", options=list(pageLength=10, scro11X=TRUE), style="default", class="compact")
+
+#Frecuencias padres
+dicta_freqpap <- dicta %>%
+  group_by(dicta$dicta3_pap)%>%
+  summarize(n=n())%>%
+  mutate(prop=n/sum(n)*100) 
+dicta_freqpap$prop <- round(dicta_freqpap$prop, digits = 1)
+total <- c("Total", 5435, 100)
+dicta_freqpap <- rbind(dicta_freqpap, total)
+#Tabla
+colnames(dicta_freqpap) <- c("El gobierno debería cerrar los medios de comunicación que lo critiquen (padres)", "Observaciones", "%")
+datatable(dicta_freqpap, rownames=F, filter="none", options=list(pageLength=10, scro11X=TRUE), style="default", class="compact")
+
+#Gráfico 
+alumnos <- ggplot(data=dicta, aes(dicta$dicta3_al)) + geom_bar(aes(y = ((..count..)/sum(..count..))), stat="count", colour="black") + 
+  scale_y_continuous(labels = scales::percent) +
+  geom_text(aes(label = scales::percent(((..count..)/sum(..count..))),
+                   y= ((..count..)/sum(..count..))), stat= "count", vjust=-.5, size=3) +
+  ggtitle("Cerrar medios: alumnos (n=5435)") +
+  theme(plot.title = element_text(size = 9),axis.text.x = element_text(size = 9)) +
+  labs(x = "Nivel de acuerdo", y = "%") 
+
+padres <- ggplot(data=dicta, aes(dicta$dicta3_pap)) + geom_bar(aes(y = ((..count..)/sum(..count..))), stat="count", colour="black") + 
+  scale_y_continuous(labels = scales::percent) +
+  geom_text(aes(label = scales::percent(((..count..)/sum(..count..))),
+                   y= ((..count..)/sum(..count..))), stat= "count", vjust=-.5, size=3) +
+  ggtitle("Cerrar medios: padres (n=5435)") +
+  theme(plot.title = element_text(size = 9),axis.text.x = element_text(size = 9)) +
+  labs(x = "Nivel de acuerdo", y = "%") 
+#Revisamos los gráficos
+ggarrange(alumnos, padres, ncol = 2, nrow = 1)
+```
+
++ **Correlaciones Policóricas**: Se presentan correlaciones asumiendo la variable como categórica (tabla de correlaciones) y como continua (gráfico de asociación de las variables).
+
+```{r dicta32, echo=TRUE, eval=TRUE}
+#Asociaciones
+#Correlaciones Policóricas
+dicta$dicta3_al1 <- as.numeric(dicta$dicta3_al)
+dicta$dicta3_pap1 <- as.numeric(dicta$dicta3_pap)
+dicta2 <- subset(dicta, select = c("dicta3_al1", "dicta3_pap1"))
+cor <- polychoric(dicta2, na.rm=TRUE)
+cor <- cor[["rho"]]
+cor <- round(cor,2)
+#Tabla
+colnames(cor) <- c("Cerrar medios de comunicación (alumnos)", "Cerrar medios de comunicación (padres)")
+rownames(cor) <- c("Cerrar medios de comunicación (alumnos)", "Cerrar medios de comunicación (padres)")
+datatable(cor, rownames=T, filter="none", options=list(pageLength=10, scro11X=TRUE), style="default", class="compact")
+
+#Gráfico de asociación 
+ggplot(dicta2, aes(x=dicta3_pap1,y=dicta3_al1)) +
+geom_point(position=position_jitter(w=0.1,h=0)) +
+geom_smooth(method="lm", se=FALSE) +
+xlab('Cerrar medios de comunicación Padres') +
+ylab('Cerrar medios de comunicación Hijos') +
+stat_cor(label.x = 3.49999, label.y = 3.5) 
+
+#Removemos
+rm(dicta, dicta2, dicta_freqal, dicta_freqpap, total, alumnos, padres, cor)
+```
+
+
++ **Regresión Múltiple lineal**: Se presentan un modelo que asume la variable dependiente e independiente del modelo como continuas y otro modelo asumiendo dichas variables como categóricas ordinales. 
+
+```{r dicta33, echo=TRUE, eval=TRUE, warning=FALSE, results = "asis"}
+#Ajustamos variable
+#Variable continua
+Hmisc::label(bbdd$dicta3_al) <- 'Concentración del poder (Alumnos)'
+Hmisc::label(bbdd$dicta3_pap) <- 'Concentración del poder (Padres)'
+#Variable Categórica
+bbdd$dicta3_alc <-factor(bbdd$dicta3_al, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "En desacuerdo", "De acuerdo", "Muy de acuerdo"))
+bbdd$dicta3_papc <-factor(bbdd$dicta3_pap, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "En desacuerdo", "De acuerdo", "Muy de acuerdo"))
+
+#Modelo de regresión múltiple lineal
+#Base de datos para estimación
+bbdd1 <- subset(bbdd, select = c("dicta3_al", "dicta3_pap", "puntaje", "sexo", "clima_esc", "discusion", "educmadre", "educpadre", "libros"))
+
+#bbdd2 <- subset(bbdd, select = c("dicta_al", "dicta_pap", "puntaje", "clima_esc", "discusion", "educmadre", "libros"))
+#bbdd2$libros <- as.numeric(bbdd2$libros)
+#bbdd2 <- na.omit(bbdd2)
+#cor(bbdd2)
+
+#1. Modelo original 
+m1 <- lm(dicta3_al~dicta3_pap, data=bbdd1)
+m2 <- lm(dicta3_al~dicta3_pap + puntaje, data=bbdd1)
+m3 <- lm(dicta3_al~dicta3_pap + puntaje + sexo, data=bbdd1)
+m4 <- lm(dicta3_al~dicta3_pap + puntaje + sexo + clima_esc, data=bbdd1)
+m5 <- lm(dicta3_al~dicta3_pap + puntaje + sexo + clima_esc + discusion, data=bbdd1)
+m6 <- lm(dicta3_al~dicta3_pap + puntaje + sexo + clima_esc + discusion + libros, data=bbdd1)
+m7 <- lm(dicta3_al~dicta3_pap + sexo + clima_esc + discusion + puntaje*libros,  data=bbdd1)
+m8 <- lm(dicta3_al~dicta3_pap + sexo + clima_esc + libros + puntaje*discusion,  data=bbdd1)
+m9 <- lm(dicta3_al~dicta3_pap + sexo + clima_esc + libros + discusion + dicta3_pap*puntaje,  data=bbdd1)
+m10 <- lm(dicta3_al~dicta3_pap + puntaje + sexo + clima_esc + libros + dicta3_pap*discusion,  data=bbdd1)
+m11 <- lm(dicta3_al~dicta3_pap + puntaje + sexo + libros + discusion + dicta3_pap*clima_esc,  data=bbdd1)
+
+#Tabla con las regresiones
+stargazer(m1,m2,m3,m4,m5,m6,m7,m8,m9,m10,m11, title = "Modelos de regresión lineal cierre de medios de comunicación (estudiantes)",order=c(1,2,4,5,7,10:13,3,6,8,9,14:17),
+           covariate.labels=c("Cierre de medios (Padre)", "Conocimiento cívico", "Hombre", "Clima Escolar", "Espacios de discusion", "Libros hogar: 11 a 25", "Libros hogar: 26 a 100", "Libros hogar: 101 a 200", "Libros hogar: 200 o más"),
+          column.labels=c("Modelo","Modelo","Modelo","Modelo","Modelo", "Modelo", "Modelo", "Modelo", "Modelo", "Modelo", "Modelo"), 
+          dep.var.caption  = "Variable Dependiente",
+          dep.var.labels   = "El gobierno debería cerrar los medios de comunicación que lo critiquen",
+          type ='html', font.size = "small", align = TRUE, omit.stat=c("f", "ser"), column.sep.width = "-15pt")
+
+#Gráfico de interacciones 
+plot_model(m7, type = "int",
+           title = "Interacción conocimiento cívico y libros en el hogar (n=4693)",
+  axis.title = c("Puntaje", "Cierre de medios (alumnos)"), legend.title = "Libros en el hogar")
+
+plot_model(m8, type = "int",
+           title = "Interacción conocimiento cívico y discusión en la sala de clases (n=4693)", axis.title = c("Puntaje", "Cierre de medios  (alumnos)"), legend.title = "Nivel de discusión en la sala de clases")
+
+plot_model(m9, type = "int",
+           title = "Interacción cierre de medios (padres) y conocimiento cívico (n=4693)", axis.title = c("Cierre de medios (padres)", "Cierre de medios (alumnos)"), legend.title = "Nivel de conocimiento cívico")
+
+plot_model(m10, type = "int",
+           title = "Interacción cierre de medios (padres) y discusión en la sala de clases (n=4693)", axis.title = c("Cierre de medios (padres)", "Cierre de medios (alumnos)"), legend.title = "Nivel de discusión en la sala de clases")
+
+plot_model(m11, type = "int",
+           title = "Interacción cierre de medios (padres) y clima escolar (n=4693)", axis.title = c("Cierre de medios (padres)", "Cierre de medios (alumnos)"), legend.title = "Clima escolar")
+
+#Removemos
+rm(bbdd1,bbdd2, m1,m2,m3,m4,m5,m6,m7,m8,m9,m10,m11)
+```
+
++ **Regresión Múltiple logística ordinal**:
+
+```{r dicta34, echo=TRUE, eval=TRUE, warning=FALSE, results = "asis"}
+#Base de datos con nuestras variables
+bbdd1 <- subset(bbdd, select = c("dicta3_alc", "dicta3_papc", "puntaje", "sexo", "clima_esc", "discusion", "educmadre", "educpadre", "libros"))
+
+#Modelos de regresión logístico ordinales
+library(MASS)
+m1 <- polr(dicta3_alc~dicta3_papc, data=bbdd1,Hess = TRUE)
+m2 <- polr(dicta3_alc~dicta3_papc + puntaje, data=bbdd1,Hess = TRUE)
+m3 <- polr(dicta3_alc~dicta3_papc + puntaje + sexo, data=bbdd1,Hess = TRUE)
+m4 <- polr(dicta3_alc~dicta3_papc + puntaje + sexo + clima_esc, data=bbdd1,Hess = TRUE)
+m5 <- polr(dicta3_alc~dicta3_papc + puntaje + sexo + clima_esc + discusion, data=bbdd1, Hess = TRUE)
+m6 <- polr(dicta3_alc~dicta3_papc + puntaje + sexo + clima_esc + discusion + libros, data=bbdd1,Hess = TRUE)
+m7 <- polr(dicta3_alc~dicta3_papc + sexo + clima_esc + discusion + puntaje*libros,  data=bbdd1,Hess = TRUE)
+m8 <- polr(dicta3_alc~dicta3_papc + sexo + clima_esc + libros + puntaje*discusion,  data=bbdd1,Hess = TRUE)
+m9 <- polr(dicta3_alc~dicta3_papc + sexo + clima_esc + libros + discusion + dicta3_papc*puntaje,  data=bbdd1,Hess = TRUE)
+m10 <- polr(dicta3_alc~dicta3_papc + puntaje + sexo + clima_esc + libros + dicta3_papc*discusion,  data=bbdd1,Hess = TRUE)
+m11 <- polr(dicta3_alc~dicta3_papc + puntaje + sexo + libros + discusion + dicta3_papc*clima_esc,  data=bbdd1,Hess = TRUE)
+
+#Modelo de regresión logístico ordinal 
+#Tabla con las regresiones
+stargazer(m1,m2,m3,m4,m5,m6,m7,m8,m9,m10,m11, title = "Modelos logísticos ordinales para cierre de medios de comunicación (estudiantes)", order = c(1:4,8:9,13,18:21,5:7,10:12,14:17,22:28),
+          column.labels=c("Modelo","Modelo","Modelo","Modelo","Modelo", "Modelo", "Modelo"), covariate.labels=c("Cierre de medios (Padre): En desacuerdo", "Cierre de medios (Padre): De acuerdo", "Cierre de medios (Padre):Muy de acuerdo", "Conocimiento cívico", "Hombre", "Clima Escolar", "Espacios de discusion", "Libros hogar: 11 a 25", "Libros hogar: 26 a 100", "Libros hogar: 101 a 200", "Libros hogar: 200 o más"),
+           dep.var.caption  = "Variable Dependiente",
+          dep.var.labels   = "El gobierno debería cerrar los medios de comunicación que lo critiquen",
+          type ='html', font.size = "small", align = TRUE, column.sep.width = "-15pt", ord.intercepts = T, style="all2")
+
+#Gráfico de interacciones 
+#Gráfico de interacciones 
+plot_model(m7, type = "int",
+           title = "Interacción conocimiento cívico y libros en el hogar (n=4693)",
+  axis.title = c("Puntaje", "Cierre de medios (alumnos)"), legend.title = "Libros en el hogar", value.size = 0.3)
+
+plot_model(m8, type = "int",
+           title = "Interacción conocimiento cívico y discusión en la sala de clases (n=4693)", axis.title = c("Puntaje", "Cierre de medios  (alumnos)"), legend.title = "Nivel de discusión en la sala de clases", value.size = 0.3)
+
+plot_model(m9, type = "int",
+           title = "Interacción cierre de medios (padres) y conocimiento cívico (n=4693)", axis.title = c("Cierre de medios (padres)", "Cierre de medios (alumnos)"), legend.title = "Nivel de conocimiento cívico", value.size = 0.3)
+
+plot_model(m10, type = "int",
+           title = "Interacción cierre de medios (padres) y discusión en la sala de clases (n=4693)", axis.title = c("Cierre de medios (padres)", "Cierre de medios (alumnos)"), legend.title = "Nivel de discusión en la sala de clases", value.size = 0.3)
+
+plot_model(m11, type = "int",
+           title = "Interacción cierre de medios (padres) y clima escolar (n=4693)", axis.title = c("Cierre de medios (padres)", "Cierre de medios (alumnos)"), legend.title = "Clima escolar", value.size = 0.3)
+
+#Removemos
+rm(bbdd1,bbdd2, m1,m2,m3,m4,m5,m6,m7,m8,m9,m10,m11)
+```
+
+
+---
+
+### 4. Si el presidente no está de acuerdo con el congreso, debería disolverlo
+
+
++ **Descriptivos**:
+
+```{r dicta41, echo=TRUE, eval=TRUE}
+#Generamos variables: Si el presidente no está de acuerdo con el congreso, debería disolverlo
+bbdd$dicta4_al <- bbdd$alp28_7
+bbdd$dicta4_pap <- bbdd$pap19_7
+dicta <- subset(bbdd, select = c("dicta4_al", "dicta4_pap"))
+skim(dicta) %>% pander()
+
+#Removemos missing
+dicta <- na.omit(dicta)
+dicta$dicta4_al <-factor(dicta$dicta4_al, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
+dicta$dicta4_pap <-factor(dicta$dicta4_pap, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
+
+#Frecuencias Estudiantes
+dicta_freqal <- dicta %>%
+  group_by(dicta$dicta4_al)%>%
+  summarize(n=n())%>%
+  mutate(prop=n/sum(n)*100) 
+dicta_freqal$prop <- round(dicta_freqal$prop, digits = 1)
+total <- c("Total", 5358, 100)
+dicta_freqal <- rbind(dicta_freqal, total)
+#Tabla
+colnames(dicta_freqal) <- c("Si el presidente no está de acuerdo con el congreso, debería disolverlo (alumnos)", "Observaciones", "%")
+datatable(dicta_freqal, rownames=F, filter="none", options=list(pageLength=10, scro11X=TRUE), style="default", class="compact")
+
+#Frecuencias padres
+dicta_freqpap <- dicta %>%
+  group_by(dicta$dicta4_pap)%>%
+  summarize(n=n())%>%
+  mutate(prop=n/sum(n)*100) 
+dicta_freqpap$prop <- round(dicta_freqpap$prop, digits = 1)
+total <- c("Total", 5358, 100)
+dicta_freqpap <- rbind(dicta_freqpap, total)
+#Tabla
+colnames(dicta_freqpap) <- c("Si el presidente no está de acuerdo con el congreso, debería disolverlo (padres)", "Observaciones", "%")
+datatable(dicta_freqpap, rownames=F, filter="none", options=list(pageLength=10, scro11X=TRUE), style="default", class="compact")
+
+#Gráfico 
+alumnos <- ggplot(data=dicta, aes(dicta$dicta4_al)) + geom_bar(aes(y = ((..count..)/sum(..count..))), stat="count", colour="black") + 
+  scale_y_continuous(labels = scales::percent) +
+  geom_text(aes(label = scales::percent(((..count..)/sum(..count..))),
+                   y= ((..count..)/sum(..count..))), stat= "count", vjust=-.5, size=3) +
+  ggtitle("Disolver el congreso: alumnos (n=5358)") +
+  theme(plot.title = element_text(size = 9),axis.text.x = element_text(size = 9)) +
+  labs(x = "Nivel de acuerdo", y = "%") 
+
+padres <- ggplot(data=dicta, aes(dicta$dicta4_pap)) + geom_bar(aes(y = ((..count..)/sum(..count..))), stat="count", colour="black") + 
+  scale_y_continuous(labels = scales::percent) +
+  geom_text(aes(label = scales::percent(((..count..)/sum(..count..))),
+                   y= ((..count..)/sum(..count..))), stat= "count", vjust=-.5, size=3) +
+  ggtitle("Disolver el congreso: padres (n=5358)") +
+  theme(plot.title = element_text(size = 9),axis.text.x = element_text(size = 9)) +
+  labs(x = "Nivel de acuerdo", y = "%") 
+#Revisamos los gráficos
+ggarrange(alumnos, padres, ncol = 2, nrow = 1)
+```
+
+
++ **Correlaciones Policóricas**: Se presentan correlaciones asumiendo la variable como categórica (tabla de correlaciones) y como continua (gráfico de asociación de las variables).
+
+```{r dicta42, echo=TRUE, eval=TRUE}
+#Asociaciones
+#Correlaciones Policóricas
+dicta$dicta4_al1 <- as.numeric(dicta$dicta4_al)
+dicta$dicta4_pap1 <- as.numeric(dicta$dicta4_pap)
+dicta2 <- subset(dicta, select = c("dicta4_al1", "dicta4_pap1"))
+cor <- polychoric(dicta2, na.rm=TRUE)
+cor <- cor[["rho"]]
+cor <- round(cor,2)
+#Tabla
+colnames(cor) <- c("Disolver el congreso (alumnos)", "Disolver el congreso (padres)")
+rownames(cor) <- c("Disolver el congreso (alumnos)", "Disolver el congreso (padres)")
+datatable(cor, rownames=T, filter="none", options=list(pageLength=10, scro11X=TRUE), style="default", class="compact")
+
+#Gráfico de asociación 
+ggplot(dicta2, aes(x=dicta4_pap1,y=dicta4_al1)) +
+geom_point(position=position_jitter(w=0.1,h=0)) +
+geom_smooth(method="lm", se=FALSE) +
+xlab('Disolver el congreso Padres') +
+ylab('Disolver el congreso Hijos') +
+stat_cor(label.x = 3.49999, label.y = 3.5) 
+
+#Removemos
+rm(dicta, dicta2, dicta_freqal, dicta_freqpap, total, alumnos, padres, cor)
+```
+
+
++ **Regresión Múltiple lineal**: Se presentan un modelo que asume la variable dependiente e independiente del modelo como continuas y otro modelo asumiendo dichas variables como categóricas ordinales. 
+
+```{r dicta43, echo=TRUE, eval=TRUE, warning=FALSE, results = "asis"}
+#Ajustamos variable
+#Variable continua
+Hmisc::label(bbdd$dicta4_al) <- 'Disolver el congreso (Alumnos)'
+Hmisc::label(bbdd$dicta4_pap) <- 'Disolver el congreso (Padres)'
+#Variable Categórica
+bbdd$dicta4_alc <-factor(bbdd$dicta4_al, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "En desacuerdo", "De acuerdo", "Muy de acuerdo"))
+bbdd$dicta4_papc <-factor(bbdd$dicta4_pap, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "En desacuerdo", "De acuerdo", "Muy de acuerdo"))
+
+#Modelo de regresión múltiple lineal
+#Base de datos para estimación
+bbdd1 <- subset(bbdd, select = c("dicta4_al", "dicta4_pap", "puntaje", "sexo", "clima_esc", "discusion", "educmadre", "educpadre", "libros"))
+
+#bbdd2 <- subset(bbdd, select = c("dicta_al", "dicta_pap", "puntaje", "clima_esc", "discusion", "educmadre", "libros"))
+#bbdd2$libros <- as.numeric(bbdd2$libros)
+#bbdd2 <- na.omit(bbdd2)
+#cor(bbdd2)
+
+#1. Modelo original 
+m1 <- lm(dicta4_al~dicta4_pap, data=bbdd1)
+m2 <- lm(dicta4_al~dicta4_pap + puntaje, data=bbdd1)
+m3 <- lm(dicta4_al~dicta4_pap + puntaje + sexo, data=bbdd1)
+m4 <- lm(dicta4_al~dicta4_pap + puntaje + sexo + clima_esc, data=bbdd1)
+m5 <- lm(dicta4_al~dicta4_pap + puntaje + sexo + clima_esc + discusion, data=bbdd1)
+m6 <- lm(dicta4_al~dicta4_pap + puntaje + sexo + clima_esc + discusion + libros, data=bbdd1)
+m7 <- lm(dicta4_al~dicta4_pap + sexo + clima_esc + discusion + puntaje*libros,  data=bbdd1)
+m8 <- lm(dicta4_al~dicta4_pap + sexo + clima_esc + libros + puntaje*discusion,  data=bbdd1)
+m9 <- lm(dicta4_al~dicta4_pap + sexo + clima_esc + libros + discusion + dicta4_pap*puntaje,  data=bbdd1)
+m10 <- lm(dicta4_al~dicta4_pap + puntaje + sexo + clima_esc + libros + dicta4_pap*discusion,  data=bbdd1)
+m11 <- lm(dicta4_al~dicta4_pap + puntaje + sexo + libros + discusion + dicta4_pap*clima_esc,  data=bbdd1)
+
+#Tabla con las regresiones
+stargazer(m1,m2,m3,m4,m5,m6,m7,m8,m9,m10,m11, title = "Modelos de regresión lineal disolver el congreso (estudiantes)",order=c(1,2,4,5,7,10:13,3,6,8,9,14:17),
+           covariate.labels=c("Disolver el congreso (Padre)", "Conocimiento cívico", "Hombre", "Clima Escolar", "Espacios de discusion", "Libros hogar: 11 a 25", "Libros hogar: 26 a 100", "Libros hogar: 101 a 200", "Libros hogar: 200 o más"),
+          column.labels=c("Modelo","Modelo","Modelo","Modelo","Modelo", "Modelo", "Modelo", "Modelo", "Modelo", "Modelo", "Modelo"), 
+          dep.var.caption  = "Variable Dependiente",
+          dep.var.labels   = "Si el presidente no está de acuerdo con el congreso, debería disolverlo",
+          type ='html', font.size = "small", align = TRUE, omit.stat=c("f", "ser"), column.sep.width = "-15pt")
+
+#Gráfico de interacciones 
+plot_model(m7, type = "int",
+           title = "Interacción conocimiento cívico y libros en el hogar (n=4693)",
+  axis.title = c("Puntaje", "Disolver el congreso (alumnos)"), legend.title = "Libros en el hogar")
+
+plot_model(m8, type = "int",
+           title = "Interacción conocimiento cívico y discusión en la sala de clases (n=4693)", axis.title = c("Puntaje", "Disolver el congreso  (alumnos)"), legend.title = "Nivel de discusión en la sala de clases")
+
+plot_model(m9, type = "int",
+           title = "Interacción disolver el congreso (padres) y conocimiento cívico (n=4693)", axis.title = c("Disolver el congreso (padres)", "Disolver el congreso (alumnos)"), legend.title = "Nivel de conocimiento cívico")
+
+plot_model(m10, type = "int",
+           title = "Interacción disolver el congreso (padres) y discusión en la sala de clases (n=4693)", axis.title = c("Disolver el congreso (padres)", "Disolver el congreso (alumnos)"), legend.title = "Nivel de discusión en la sala de clases")
+
+plot_model(m11, type = "int",
+           title = "Interacción disolver el congreso (padres) y clima escolar (n=4693)", axis.title = c("Disolver el congreso (padres)", "Disolver el congreso (alumnos)"), legend.title = "Clima escolar")
+
+#Removemos
+rm(bbdd1,bbdd2, m1,m2,m3,m4,m5,m6,m7,m8,m9,m10,m11)
+```
+
++ **Regresión Múltiple logística ordinal**:
+
+```{r dicta44, echo=TRUE, eval=TRUE, warning=FALSE, results = "asis"}
+#Base de datos con nuestras variables
+bbdd1 <- subset(bbdd, select = c("dicta4_alc", "dicta4_papc", "puntaje", "sexo", "clima_esc", "discusion", "educmadre", "educpadre", "libros"))
+
+#Modelos de regresión logístico ordinales
+library(MASS)
+m1 <- polr(dicta4_alc~dicta4_papc, data=bbdd1,Hess = TRUE)
+m2 <- polr(dicta4_alc~dicta4_papc + puntaje, data=bbdd1,Hess = TRUE)
+m3 <- polr(dicta4_alc~dicta4_papc + puntaje + sexo, data=bbdd1,Hess = TRUE)
+m4 <- polr(dicta4_alc~dicta4_papc + puntaje + sexo + clima_esc, data=bbdd1,Hess = TRUE)
+m5 <- polr(dicta4_alc~dicta4_papc + puntaje + sexo + clima_esc + discusion, data=bbdd1, Hess = TRUE)
+m6 <- polr(dicta4_alc~dicta4_papc + puntaje + sexo + clima_esc + discusion + libros, data=bbdd1,Hess = TRUE)
+m7 <- polr(dicta4_alc~dicta4_papc + sexo + clima_esc + discusion + puntaje*libros,  data=bbdd1,Hess = TRUE)
+m8 <- polr(dicta4_alc~dicta4_papc + sexo + clima_esc + libros + puntaje*discusion,  data=bbdd1,Hess = TRUE)
+m9 <- polr(dicta4_alc~dicta4_papc + sexo + clima_esc + libros + discusion + dicta4_papc*puntaje,  data=bbdd1,Hess = TRUE)
+m10 <- polr(dicta4_alc~dicta4_papc + puntaje + sexo + clima_esc + libros + dicta4_papc*discusion,  data=bbdd1,Hess = TRUE)
+m11 <- polr(dicta4_alc~dicta4_papc + puntaje + sexo + libros + discusion + dicta4_papc*clima_esc,  data=bbdd1,Hess = TRUE)
+
+#Modelo de regresión logístico ordinal 
+stargazer(m1,m2,m3,m4,m5,m6,m7,m8,m9,m10,m11, title = "Modelos logísticos ordinales para disolver el congreso  (estudiantes)", order = c(1:4,8:9,13,18:21,5:7,10:12,14:17,22:28),
+          column.labels=c("Modelo","Modelo","Modelo","Modelo","Modelo", "Modelo", "Modelo"), covariate.labels=c("Disolver el congreso (Padre): En desacuerdo", "Disolver el congreso (Padre): De acuerdo", "Disolver el congreso (Padre):Muy de acuerdo", "Conocimiento cívico", "Hombre", "Clima Escolar", "Espacios de discusion", "Libros hogar: 11 a 25", "Libros hogar: 26 a 100", "Libros hogar: 101 a 200", "Libros hogar: 200 o más"),
+           dep.var.caption  = "Variable Dependiente",
+          dep.var.labels   = "Si el presidente no está de acuerdo con el congreso, debería disolverlo",
+          type ='html', font.size = "small", align = TRUE, column.sep.width = "-15pt", ord.intercepts = T, style="all2")
+
+#Gráfico de interacciones 
+plot_model(m7, type = "int",
+           title = "Interacción conocimiento cívico y libros en el hogar (n=4693)",
+  axis.title = c("Puntaje", "Disolver el congreso (alumnos)"), legend.title = "Libros en el hogar")
+
+plot_model(m8, type = "int",
+           title = "Interacción conocimiento cívico y discusión en la sala de clases (n=4693)", axis.title = c("Puntaje", "Disolver el congreso  (alumnos)"), legend.title = "Nivel de discusión en la sala de clases")
+
+plot_model(m9, type = "int",
+           title = "Interacción disolver el congreso (padres) y conocimiento cívico (n=4693)", axis.title = c("Disolver el congreso (padres)", "Disolver el congreso (alumnos)"), legend.title = "Nivel de conocimiento cívico")
+
+plot_model(m10, type = "int",
+           title = "Interacción disolver el congreso (padres) y discusión en la sala de clases (n=4693)", axis.title = c("Disolver el congreso (padres)", "Disolver el congreso (alumnos)"), legend.title = "Nivel de discusión en la sala de clases")
+
+plot_model(m11, type = "int",
+           title = "Interacción disolver el congreso (padres) y clima escolar (n=4693)", axis.title = c("Disolver el congreso (padres)", "Disolver el congreso (alumnos)"), legend.title = "Clima escolar")
+
+#Removemos
+rm(bbdd1,bbdd2, m1,m2,m3,m4,m5,m6,m7,m8,m9,m10,m11)
+```
+
+---
+
+## Valoración de la democracia 
+
+      Las democracias son la mejor forma de gobierno porque aseguran la participación
+      El gobierno debe garantizar la libertad de expresión de las personas
+      Los gobiernos democráticos fomentan una mayor igualdad entre las personas
+      
+      1. Muy en desacuerdo
+      2. En desacuerdo
+      3. De acuerdo
+      4. Muy de acuerdo
+      
+---
 
 ## Participación en organizaciones
 
+      Una organización juvenil relacionada con un partido político o sindicato
+      Un grupo de acción u organización medioambiental
+      Una organización por los derechos humanos
+      Un grupo de voluntarios que hacen cosas para ayudar a la comunidad
+      Una organización que recauda dinero para una causa social
+      Un grupo de jóvenes haciendo una campaña para algún tema
+      Un grupo de defensa de los derechos de los animales
+      Un grupo u organización religiosa
+    
+      1. No, nunca he hecho esto
+      2. Sí, dentro de los últimos tres años
+      3. Sí, dentro de los últimos doce meses
+    
+      Se descartan las siguientes afirmaciones del ítem por no tener su contraparte en el cuestionario de padres:
+    
+      Un grupo comunitario de jóvenes (como los scouts)
+      Un equipo deportivo
+    
+---
+
 ## Atributos del buen ciudadano
+    
+      Votar en todas las elecciones
+      Unirse a un partido político
+      Aprender de la historia del país
+      Estar informado sobre los temas políticos más relevantes
+      Demostrar respeto por los representantes del Estado
+      Involucrarse en discusiones políticas
+      Participar en protestas pacíficas en contra de las leyes que considera injustas
+      Participar en actividades para beneficiar a la gente de su comunidad (barrio, comuna o ciudad)
+      Participar en actividades que promuevan los derechos humanos
+      Participar en actividades que promuevan la protección del medio ambiente
+      Trabajar arduamente
+      Obedecer siempre la ley
+      Asegurar el bienestar económico de sus familias
+      Hacer esfuerzos personales para proteger recursos naturales (ahorrar agua, reciclar basura, etc.)
+      Respetar los derechos de los otros a tener sus propias opiniones
+      Apoyar a personas que están peor que uno
+      Involucrarse en actividades para ayudar a la gente de países menos desarrollados
+    
+      1. Sin ninguna importancia
+      2. No muy importante
+      3. Importante
+      4. Muy importante
+    
+---
 
 ## Confianza en las instituciones 
 
+      El congreso Nacional
+      Los Tribunales de Justicia
+      El Gobierno
+      Los partidos políticos
+      Los bancos
+      Las empresas privadas
+      Los carabineros
+      Las Fuerzas Armadas
+      Los sindicatos	
+      Las radios
+      La televisión
+      Los diarios
+      Las redes sociales (por ejemplo Twitter, Youtube)
+      
+      1. Nada o muy poco
+      2. Algo
+      3. Bastante
+      4. Mucho
+    
+---
+
 ## Percepciones sobre la paz y violencia 
 
+      La paz sólo se logra por medio del diálogo y la negociación
+      Para lograr la paz, el fin justifica los medios
+      Si las autoridades no actúan, los ciudadanos deben organizarse para castigar a los criminales
+      La violencia y/o la fuerza física son medios para lograr lo que uno quiere
+      
+      1. Muy en desacuerdo
+      2. En desacuerdo
+      3. De acuerdo
+      4. Muy de acuerdo
+      
+---
+
+# Pendientes 
+
+Se omiten estos detalles dado el sentido exploratorio de este reporte. 
+
++ Especificar variables a utilizar 
++ Definir indicadores para medir variables relacionadas al clima escolar y discusión al interior de la sala de clases (categorías)
++ Aplicar ponderadores (una vez se tenga mayor conocimiento)
++ Testear homocedasticidad y aplicar errores estándar robustos a las regresiones. 
