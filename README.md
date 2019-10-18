@@ -39,7 +39,10 @@ Los análisis disponibles en estos códigos son los siguientes:
 
 Asimismo se puede hacer una revisión dinámica de las variables del estudio, sus descripción y el tipo individuos que responde (alumnos, padres o ambos) en el Documento de consulta:  https://panelciudadania.shinyapps.io/Documento_consulta/
 
-Todas las decisiones de análisis están documentadas en el respectivo documento markdown de reporte. 
+Todas las decisiones de análisis están documentadas en el respectivo documento markdown de reporte.
+
+[Presentación 18 Octubre](https://juancarloscastillo.github.io/ciudadania-agencia/Presentacion_Estudio_Agencia.html)
+
 
 José Daniel Conejeros
 
