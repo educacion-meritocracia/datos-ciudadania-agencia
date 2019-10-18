@@ -2109,13 +2109,190 @@ rm(bbdd1,bbdd2, m1,m2,m3,m4,m5,m6,m7,m8,m9,m10,m11)
 ### El gobierno debe garantizar la libertad de expresión de las personas
 
 
-
 ---
 
 ### Los gobiernos democráticos fomentan una mayor igualdad entre las personas
 
-
       
+---
+
+## Confianza en las instituciones 
+
+      El congreso Nacional
+      Los Tribunales de Justicia
+      El Gobierno
+      Los partidos políticos
+      Los bancos
+      Las empresas privadas
+      Los carabineros
+      Las Fuerzas Armadas
+      Los sindicatos	
+      Las radios
+      La televisión
+      Los diarios
+      Las redes sociales (por ejemplo Twitter, Youtube)
+      
+      1. Nada o muy poco
+      2. Algo
+      3. Bastante
+      4. Mucho
+
+
+### Confianza en el gobierno 
+
+  + **Descriptivos**:
+
+```{r gob, echo=TRUE, eval=TRUE}
+#Generamos variables: Si el presidente no está de acuerdo con el congreso, debería disolverlo
+bbdd$gob_al <- bbdd$alp27_1
+bbdd$gob_pap <- bbdd$pap21_1
+gob <- subset(bbdd, select = c("gob_al", "gob_pap"))
+skim(gob) %>% pander()
+
+#Removemos missing
+gob <- na.omit(gob)
+gob$gob_al <-factor(gob$gob_al, levels = c(1,2,3,4), labels = c("Nada", "Algo", "Bastante", "Mucho"))
+gob$gob_pap <-factor(gob$gob_pap, levels = c(1,2,3,4), labels = c("Nada", "Algo", "Bastante", "Mucho"))
+
+#Frecuencias Estudiantes
+gob_freqal <- gob %>%
+  group_by(gob$gob_al)%>%
+  summarize(n=n())%>%
+  mutate(prop=n/sum(n)*100) 
+gob_freqal$prop <- round(gob_freqal$prop, digits = 1)
+total <- c("Total", 5879, 100)
+gob_freqal <- rbind(gob_freqal, total)
+#Tabla
+colnames(gob_freqal) <- c("Confianza en el gobierno (alumnos)", "Observaciones", "%")
+datatable(gob_freqal, rownames=F, filter="none", options=list(pageLength=10, scro11X=TRUE), style="default", class="compact")
+
+#Frecuencias padres
+gob_freqpap <- gob %>%
+  group_by(gob$gob_pap)%>%
+  summarize(n=n())%>%
+  mutate(prop=n/sum(n)*100) 
+gob_freqpap$prop <- round(gob_freqpap$prop, digits = 1)
+total <- c("Total", 5879, 100)
+gob_freqpap <- rbind(gob_freqpap, total)
+#Tabla
+colnames(gob_freqpap) <- c("Confianza en el gobierno (padres)", "Observaciones", "%")
+datatable(gob_freqpap, rownames=F, filter="none", options=list(pageLength=10, scro11X=TRUE), style="default", class="compact")
+
+#Gráfico 
+alumnos <- ggplot(data=gob, aes(gob$gob_al)) + geom_bar(aes(y = ((..count..)/sum(..count..))), stat="count", colour="black") + 
+  scale_y_continuous(labels = scales::percent) +
+  geom_text(aes(label = scales::percent(((..count..)/sum(..count..))),
+                   y= ((..count..)/sum(..count..))), stat= "count", vjust=-.5, size=3.5) +
+  ggtitle("Confianza en el gobierno: alumnos (n=5626)") +
+  theme(plot.title = element_text(size = 9),axis.text.x = element_text(size = 9)) +
+  labs(x = "Nivel de confianza", y = "%") 
+
+padres <- ggplot(data=gob, aes(gob$gob_pap)) + geom_bar(aes(y = ((..count..)/sum(..count..))), stat="count", colour="black") + 
+  scale_y_continuous(labels = scales::percent) +
+  geom_text(aes(label = scales::percent(((..count..)/sum(..count..))),
+                   y= ((..count..)/sum(..count..))), stat= "count", vjust=-.5, size=3.5) +
+  ggtitle("Confianza en el gobierno: padres (n=5626)") +
+  theme(plot.title = element_text(size = 9),axis.text.x = element_text(size = 9)) +
+  labs(x = "Nivel de confianza", y = "%") 
+
+#Revisamos los gráficos
+ggarrange(alumnos, padres, ncol = 2, nrow = 1)
+
+```
+
+
++ **Correlaciones Policóricas**: Se presentan correlaciones asumiendo la variable como categórica (tabla de correlaciones) y como continua (gráfico de asociación de las variables).
+
+```{r gob2, echo=TRUE, eval=TRUE}
+#Asociaciones
+#Correlaciones Policóricas
+gob$gob_al1 <- as.numeric(gob$gob_al)
+gob$gob_pap1 <- as.numeric(gob$gob_pap)
+gob1 <- subset(gob, select = c("gob_al1", "gob_pap1"))
+cor <- polychoric(gob, na.rm=TRUE)
+cor <- cor[["rho"]]
+cor <- round(cor,2)
+#Tabla
+colnames(cor) <- c("Confianza - Gobierno (alumnos)", "Confianza - Gobierno (padres)")
+rownames(cor) <- c("Confianza - Gobierno (alumnos)", "Confianza - Gobierno (padres)")
+datatable(cor, rownames=T, filter="none", options=list(pageLength=10, scro11X=TRUE), style="default", class="compact")
+
+#Gráfico de asociación 
+ggplot(gob1, aes(x=gob_pap1,y=gob_al1)) +
+geom_point(position=position_jitter(w=0.1,h=0)) +
+geom_smooth(method="lm", se=FALSE) +
+xlab('Confianza - Gobierno: Padres') +
+ylab('Confianza - Gobierno: Hijos') +
+stat_cor(label.x = 3.49999, label.y = 3.5) 
+
+#Removemos
+rm(gob, gob1, gob_freqal, gob_freqpap, total, alumnos, padres, cor)
+```
+
++ **Regresión Múltiple lineal**: Se presentan un modelo que asume la variable dependiente e independiente del modelo como continuas y otro modelo asumiendo dichas variables como categóricas ordinales. 
+
+```{r gob3, echo=TRUE, eval=TRUE, warning=FALSE, results = "asis"}
+#Ajustamos variable
+#Variable continua
+Hmisc::label(bbdd$gob_al) <- 'Confianza - Gobierno (Alumnos)'
+Hmisc::label(bbdd$gob_pap) <- 'Confianza - Gobierno (Padres)'
+#Variable Categórica
+bbdd$gob_alc <-factor(bbdd$gob_al, levels = c(1,2,3,4), labels = c("Nada", "Algo", "Bastante", "Mucho"))
+bbdd$gob_papc <-factor(bbdd$gob_pap, levels = c(1,2,3,4), labels = c("Nada", "Algo", "Bastante", "Mucho"))
+
+#Modelo de regresión múltiple lineal
+#Base de datos para estimación
+bbdd1 <- subset(bbdd, select = c("gob_al", "gob_pap", "puntaje", "sexo", "clima_esc", "discusion", "educmadre", "educpadre", "libros"))
+
+#bbdd2 <- subset(bbdd, select = c("dicta_al", "dicta_pap", "puntaje", "clima_esc", "discusion", "educmadre", "libros"))
+#bbdd2$libros <- as.numeric(bbdd2$libros)
+#bbdd2 <- na.omit(bbdd2)
+#cor(bbdd2)
+
+#1. Modelo original 
+m1 <- lm(gob_al~gob_pap, data=bbdd1)
+m2 <- lm(gob_al~gob_pap + puntaje, data=bbdd1)
+m3 <- lm(gob_al~gob_pap + puntaje + sexo, data=bbdd1)
+m4 <- lm(gob_al~gob_pap + puntaje + sexo + clima_esc, data=bbdd1)
+m5 <- lm(gob_al~gob_pap + puntaje + sexo + clima_esc + discusion, data=bbdd1)
+m6 <- lm(gob_al~gob_pap + puntaje + sexo + clima_esc + discusion + libros, data=bbdd1)
+m7 <- lm(gob_al~gob_pap + sexo + clima_esc + discusion + puntaje*libros,  data=bbdd1)
+m8 <- lm(gob_al~gob_pap + sexo + clima_esc + libros + puntaje*discusion,  data=bbdd1)
+m9 <- lm(gob_al~gob_pap + sexo + clima_esc + libros + discusion + gob_pap*puntaje,  data=bbdd1)
+m10 <- lm(gob_al~gob_pap + puntaje + sexo + clima_esc + libros + gob_pap*discusion,  data=bbdd1)
+m11 <- lm(gob_al~gob_pap + puntaje + sexo + libros + discusion + gob_pap*clima_esc,  data=bbdd1)
+
+#Tabla con las regresiones
+stargazer(m1,m2,m3,m4,m5,m6,m7,m8,m9,m10,m11, title = "Modelos de regresión lineal para confianza en el gobierno (estudiantes)",order=c(1,2,4,5,7,10:13,3,6,8,9,14:17),
+           covariate.labels=c("Confianza - Gobierno (Padre)", "Conocimiento cívico", "Hombre", "Clima Escolar", "Espacios de discusion", "Libros hogar: 11 a 25", "Libros hogar: 26 a 100", "Libros hogar: 101 a 200", "Libros hogar: 200 o más"),
+          column.labels=c("Modelo","Modelo","Modelo","Modelo","Modelo", "Modelo", "Modelo", "Modelo", "Modelo", "Modelo", "Modelo"), 
+          dep.var.caption  = "Variable Dependiente",
+          dep.var.labels   = "Confianza en el gobierno",
+          type ='html', font.size = "small", align = TRUE, omit.stat=c("f", "ser"), column.sep.width = "-15pt")
+
+#Gráfico de interacciones 
+plot_model(m7, type = "int",
+           title = "Interacción conocimiento cívico y libros en el hogar (n=4811)",
+  axis.title = c("Puntaje", "Confianza - Gobierno (alumnos)"), legend.title = "Libros en el hogar")
+
+plot_model(m8, type = "int",
+           title = "Interacción conocimiento cívico y discusión en la sala de clases (n=4811)", axis.title = c("Puntaje", "Confianza - Gobierno  (alumnos)"), legend.title = "Nivel de discusión en la sala de clases")
+
+plot_model(m9, type = "int",
+           title = "Interacción Confianza - Gobierno (padres) y conocimiento cívico (n=4811)", axis.title = c("Confianza - Gobierno (padres)", "Democracia - participación (alumnos)"), legend.title = "Nivel de conocimiento cívico")
+
+plot_model(m10, type = "int",
+           title = "Interacción Confianza - Gobierno (padres) y discusión en la sala de clases (n=4811)", axis.title = c("Confianza - Gobierno (padres)", "Confianza - Gobierno (alumnos)"), legend.title = "Nivel de discusión en la sala de clases")
+
+plot_model(m11, type = "int",
+           title = "Interacción Confianza - Gobierno (padres) y clima escolar (n=4811)", axis.title = c("Confianza - Gobierno (padres)", "Confianza - Gobierno (alumnos)"), legend.title = "Clima escolar")
+
+#Removemos
+rm(bbdd1,bbdd2, m1,m2,m3,m4,m5,m6,m7,m8,m9,m10,m11)
+```
+
+
+    
 ---
 
 ## Participación en organizaciones
@@ -2164,29 +2341,6 @@ rm(bbdd1,bbdd2, m1,m2,m3,m4,m5,m6,m7,m8,m9,m10,m11)
       2. No muy importante
       3. Importante
       4. Muy importante
-    
----
-
-## Confianza en las instituciones 
-
-      El congreso Nacional
-      Los Tribunales de Justicia
-      El Gobierno
-      Los partidos políticos
-      Los bancos
-      Las empresas privadas
-      Los carabineros
-      Las Fuerzas Armadas
-      Los sindicatos	
-      Las radios
-      La televisión
-      Los diarios
-      Las redes sociales (por ejemplo Twitter, Youtube)
-      
-      1. Nada o muy poco
-      2. Algo
-      3. Bastante
-      4. Mucho
     
 ---
 

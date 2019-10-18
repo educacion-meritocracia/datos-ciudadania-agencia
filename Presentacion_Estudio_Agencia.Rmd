@@ -1,0 +1,1634 @@
+---
+title: "Socialización política y educación para la ciudadanía: el rol de la familia y la escuela" 
+subtitle: "[Análisis Estudio de Formación Ciudadana 2017]()" 
+author: 
+- "Daniel Miranda, Investigador MIDE UC - COES <br/> Juan Carlos Castillo, Universidad de Chile - COES <br/> José Daniel Conejeros, Pontificia Universidad Católica de Chile - COES  <br/><br/> Contacto: [jdconejeros@uc.cl](jdconejeros@uc.cl) <br /> "
+date: '`r format(Sys.time(), "%d/%m/%Y")`'
+fontsize: 10pt
+output:
+  xaringan::moon_reader:
+    css: [xaringan-themer.css, extra.css, "https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.7.0/animate.min.css", "../xaringan_custom/xaringan-themer.css","../xaringan_custom/progress-bar.css"]
+    lib_dir: libs
+    nature:
+      #  <div class="progress-bar-container">
+      #    </div>
+      #  </div>`
+      #slideNumberFormat:   |
+      #    <div class="progress-bar" style="width: calc(%current% / %total% * 100%);">
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+      beforeInit: "macros.js"
+      seal: false
+   #includes:
+  #    after_body: "collapseoutput.js"
+---
+
+class: inverse, middle, center
+
+```{r r xarin, include = FALSE}
+#remotes::install_github('yihui/xaringan', upgrade = TRUE)
+library(xaringanthemer)
+#install.packages("Rcpp")
+#install.packages("rlang")
+#install.packages("backports")
+#devtools::install_github("tidyverse/glue")
+#devtools::install_github("gadenbuie/xaringanthemer")
+#install.packages("digest")
+
+#solarized_light(background_color="#FFF",
+#                text_color="#000",
+#                base_color = "#1c5253",
+#                header_font_google = google_font("Josefin Sans"))
+
+solarized_light(background_color="##1c5253",
+  header_font_google = google_font("Yanone Kaffeesatz", "400", "400i", "500i", "600"),
+  text_font_google   = google_font("Work Sans", "400", "200i"),
+  code_font_google   = google_font("IBM Plex Mono")
+)
+
+
+#mono_light(
+  #base_color = "#1c5253",
+ # header_font_google = google_font("Josefin Sans"),
+  #text_font_google   = google_font("Montserrat", "300", "300i"),
+  #code_font_google   = google_font("Droid Mono")
+#)
+
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(warning = FALSE)
+knitr::opts_chunk$set(message = FALSE)
+#knitr::opts_chunk$set(dev = 'jpg')
+# remove all previous objects
+rm(list = ls()) 
+```
+
+
+# Contexto
+
+---
+
+## Proyecto Fondecyt Regular 1181239
+
+.middle[
+El objetivo de este proyecto es indagar el proceso y los mecanismos de aprendizaje y adquisición de **C**reencias, **C**onocimientos, **A**ctitudes y **P**rácticas relevantes para el ejercicio de la ciudadanía, siguiendo dos agencias claves: la familia y la escuela.
+]
+
+
+![:scale 90%](figuras/f1.png)
+
+--
+
+.center[
+### ¿En qué medida la escuela es un agente reproductor o mitigador de la transmisión intergeneracional de la desigualdad política familiar?
+]
+
+---
+
+## Hipótesis
+
+H1: El modelo conceptual CCAP es posible de operacionalizar y estimar en base a indicadores disponibles con un buen ajuste en términos de medición.
+
+H2: Características socioeconómicas de los padres con las CCAP ciudadanas de los hijos estará mediada por los niveles de politización de la familia.
+
+H3: Los patrones de transmisión intergeneracional de la desigualdad política observados en la cohorte de 8° básico son similares a los patrones observados en la cohorte de 4°EM.
+
+---
+
+## Hipótesis a observar
+
+**H4:** Estudiantes provenientes de familias con mayores niveles de estatus socioeconómico presentarán mayores niveles y mayor riqueza de CCAP.
+
+
+**H5:** Jóvenes provenientes de familias más politizadas presentarán mayores niveles de CCAP.
+
+
+**H6:** Escuelas con un mayor clima democrático se observarán menores niveles de transmisión política intergeneracional de la desigualdad política.
+
+---
+
+class: inverse, middle, center
+
+# Datos, Variables y Métodos
+
+---
+
+## Datos 
+
+Primer Estudio Nacional de Formación Ciudadana aplicada el año 2017 a una muestra representativa de estudiantes de 8º básico y sus padres y madres. 
+
+**Principales Dimensiones:**
+
++ Conocimiento Cívico
++ Actitudes y valores democráticos
++ Prácticas ciudadanas
+
+<p align="center">
+
+![:scale 60%](figuras/f2.png)
+
+</p>
+
+---
+
+## Datos II
+
+El estudio se divide en tres bases de datos que representan: 
+
+```{r opciones globales, warning=FALSE, cache=FALSE, include=FALSE, results="asis", echo=TRUE}
+rm(list = ls()) #limpiar la memoria
+#Desactivar notación científica
+options(scipen=999)
+#Paquetes
+library(knitr)
+library(rmdformats)
+library(DT)
+library(dplyr)
+library(haven)
+library(texreg) 
+library(xtable) 
+library(kableExtra) 
+library(ggplot2)
+library(shiny)
+library(psych)
+library(PerformanceAnalytics)
+library(purrr)
+library(tidyr)
+library(vcd)
+library(vcdExtra)
+library(skimr)
+library(sjmisc)
+library(stargazer)
+library(sjPlot)
+library(ggpubr)
+```
+
+
+```{r, echo=FALSE}
+#Abrir bases de datos
+bbdd_puntajes <- read_dta("bbdd/alumnosFc_mrun.dta")
+bbdd_alumnos <- read_dta("bbdd/cuestAlumnos.dta")
+bbdd_padres <- read_dta("bbdd/cuestPadres.dta")
+#Transformamos nuestras bases a un data frame
+bbdd_puntajes <- as.data.frame(bbdd_puntajes)
+names(bbdd_puntajes) <- tolower(names(bbdd_puntajes)) 
+bbdd_alumnos <- as.data.frame(bbdd_alumnos)
+names(bbdd_alumnos) <- tolower(names(bbdd_alumnos)) 
+bbdd_padres <- as.data.frame(bbdd_padres)
+names(bbdd_padres) <- tolower(names(bbdd_padres)) 
+#Tabla con las observaciones y variables para cada base de datos
+puntajes <- dim(bbdd_puntajes)
+alumnos <- dim(bbdd_alumnos)
+padres <- dim(bbdd_padres)
+names <- c("Prueba de conocimiento", "Cuestionario Alumnos", "Cuestionario Padres")
+data <- rbind(puntajes, alumnos, padres)
+data <- as.data.frame(cbind(names, data))
+colnames(data) <- c("Base de datos", "Observaciones", "Variables")
+
+datatable(data, rownames=FALSE, style="default", class="compact", filter="none", selection = "none", options = list(dom = 't', columnDefs = list(list(className = 'dt-center', targets = "_all")))) 
+```
+
+**Información Disponible:**
+
++ El `merge` entre la base de datos con los puntajes en la prueba de conocimiento y el cuestionario para estudiantes nos deja un saldo de **8344** observaciones.
+
++ El `merge` entre la base de datos con los puntajes en la prueba de conocimiento, más el cuestionario para estudiantes y el cuestionario de padres nos deja un saldo de **6342** observaciones.
+
++ Esto no considera la pérdida de información para cada pregunta/ítem en particular producto de la no respuesta. 
+
+---
+
+## Variables 
+
+### Temás relevantes para el proyecto 
+
++ Interés Político 
++ Ideas autoritarias 
++ Valoración de la democracia 
++ Confianza en las instituciones políticas 
++ Atributos del buen ciudadano 
+
+**En la sección de resultados serán desarrollados cada uno de estos temas**
+
+---
+
+## Variables II
+
+### Variables sociodemográficas de los/as estudiantes y sus padres. 
+
++ Género 
++ Puntaje en la prueba de conocimiento 
++ Máximo nivel educacional del padre/madre
++ Libros en el hogar
+
+### Variables de la escuela 
+
++ Clima escolar 
++ Nivel de discusión en la sala de clases
+
+---
+
+## Métodos 
+
+### I. Exploratorios 
+
++ Descriptivos y construcción de indicadores 
+
+### II. Asociaciones
+
++ Correlaciones policóricas entre padres y estudiantes 
++ Modelos de regresión múltiple (se asumen escalas continuas de las variables dependientes)
+
+### III. Interacciones 
+
++ Puntaje en la prueba de conocimiento 
++ Libros en el hogar 
++ Clima escolar 
++ Discusión en la sala de clases 
+
+---
+
+class: inverse, middle, center
+
+# Avances
+
+---
+
+## Descriptivos Iniciales
+
+```{r, echo=FALSE}
+#Despejamos el environment
+rm(puntajes, alumnos, padres, names, data)
+#Base General con los puntajes: recodificamos el sexo a un factor
+bbdd_puntajes$sexo <- rec(bbdd_puntajes$sexo, rec="M=1; F=0")
+bbdd_puntajes$sexo <-factor(bbdd_puntajes$sexo, levels = c(0,1), labels = c("Mujer", "Hombre"))
+
+#Base General con el cuestionario para estudiantes
+#Codificamos los valores 99 como missing para todas las variables con rango [1-4]
+bbdd_alumnos <- bbdd_alumnos %>%
+    mutate_at(vars(4:222), na_if, 99) %>%
+    mutate_at(vars(4:222), na_if, 0)
+bbdd_alumnos <- bbdd_alumnos %>%
+    mutate_at(vars(22), na_if, 99) %>%
+    mutate_at(vars(4:222), na_if, 0)
+
+#Base General con el cuestionario para padres
+#Codificamos los valores 99 como missing para todas las variables con rango [1-4]
+bbdd_padres <- bbdd_padres %>%
+    mutate_at(vars(4:141), na_if, 99) %>%
+    mutate_at(vars(4:141), na_if, 0)
+#Identificamos respuestas en ambos cuestionarios
+bbdd_alumnos$resp_al <- 1
+bbdd_padres$resp_pap <- 1
+
+#Merge con la base de alumnos
+bbdd_missing1 <- merge(bbdd_puntajes, bbdd_alumnos, by="idalumno", all=T, suffixes = c("",".y"))
+#Identificamos missing
+bbdd_missing1$resp_al[is.na(bbdd_missing1$puntaje) & bbdd_missing1$resp_al == 1] <- 0
+
+#Generamos una base de datos solo con la información disponible
+bbdd1<- merge(bbdd_puntajes, bbdd_alumnos, by="idalumno", all=F, suffixes = c("",".y"))
+bbdd1$resp_al[is.na(bbdd1$puntaje) & bbdd1$resp_al == 1] <- 0
+bbdd1 <- bbdd1[!bbdd1$resp_al == "0", ] 
+
+#Realizamos el mismo ejercicio para identificar los missing con el cuestionario de padres a partir de la última base de datos generada
+bbdd_missing2 <- merge(bbdd1, bbdd_padres, by="idalumno", all=T, suffixes = c("",".y"))
+
+#Despejamos el environment
+rm(bbdd_missing1, bbdd1, bbdd_missing2)
+
+#Generamos una base de datos solo con la información disponible: 6342 observaciones
+bbdd<- merge(bbdd_puntajes, bbdd_alumnos, by="idalumno", all=F, suffixes = c("",".y"))
+bbdd$resp_al[is.na(bbdd$puntaje) & bbdd$resp_al == 1] <- 0
+bbdd <- bbdd[!bbdd$resp_al == "0", ] 
+#Agregamos la segunda base
+bbdd <- merge(bbdd, bbdd_padres, by="idalumno", all=F, suffixes = c("",".y"))
+bbdd$resp_pap[is.na(bbdd$resp_al) & bbdd$resp_pap == 1] <- 0
+bbdd <- bbdd[!bbdd$resp_pap == "0", ] 
+```
+
+
+### Género
+
++ Estudiantes
+
+```{r, echo=FALSE}
+#Revisamos la variable 
+sexo <- subset(bbdd, select = c("sexo"))
+sexo <- sexo %>%
+  group_by(sexo)%>%
+  summarize(n=n())%>%
+  mutate(prop=n/sum(n)*100) 
+
+sexo$prop <- round(sexo$prop, digits = 1)
+total <- c("Total", 6342, 100)
+sexo <- rbind(sexo, total)
+#Tabla
+colnames(sexo) <- c("Genero", "Observaciones", "%")
+datatable(sexo, rownames=FALSE, style="default", class="compact", filter="none", selection = "none", options = list(dom = 't', columnDefs = list(list(className = 'dt-center', targets = "_all")))) 
+#Removemos  
+rm(sexo, total)
+```
+
++ Padres 
+
+```{r, echo=FALSE}
+#Género Padres
+bbdd$generopap[bbdd$pap2==1] <- 0 #Padre (Hombre)
+bbdd$generopap[bbdd$pap2==2] <- 1 #Madre (Mujer)
+
+#Revisamos la variable 
+genero <- subset(bbdd, select = c("generopap"))
+genero <- na.omit(genero)
+
+genero <- genero %>%
+  group_by(generopap)%>%
+  summarize(n=n())%>%
+  mutate(prop=n/sum(n)*100) 
+
+genero$prop <- round(genero$prop, digits = 1)
+total <- c("Total", 6211, 100)
+genero <- rbind(genero, total)
+genero$generopap[genero$generopap==0] <- "Hombre (padre)"
+genero$generopap[genero$generopap==1] <- "Mujer (madre)"
+
+#Tabla
+colnames(genero) <- c("Genero", "Observaciones", "%")
+datatable(genero, rownames=FALSE, style="default", class="compact", filter="none", selection = "none", options = list(dom = 't', columnDefs = list(list(className = 'dt-center', targets = "_all")))) 
+#Removemos  
+rm(genero, total)
+```
+
+---
+
+### Conocimiento Cívico
+
+```{r, echo=FALSE, fig.align="center", results="asis"}
+#Descriptivos puntaje prueba de conocimiento
+puntaje <- subset(bbdd, select = c("puntaje"))
+stargazer(puntaje, title = "Descriptivos puntaje en la prueba de conocimiento", type ='html', font.size = "small", align = TRUE, column.sep.width = "-15pt")
+#t.test(puntaje, mu = 485) #Diferencia estadísticamente significativa
+```
+
+
+```{r, echo=FALSE, fig.align="center",  out.width = "380px", results="asis"}
+#Gráficos
+ggplot(data=puntaje, aes(puntaje)) + geom_histogram(aes(y =..density..),binwidth=10, colour="black") + ggtitle("Histograma prueba de conocimiento") +
+  labs(x = "Puntaje", y = "") +
+    stat_function(fun = dnorm, 
+        args = list(mean = mean(puntaje[,1], na.rm = TRUE), 
+                    sd = sd(puntaje[,1], na.rm = TRUE)), 
+        colour = 'darkred', size = 1) 
+
+#Removemos objetos
+rm(puntaje, a)
+```
+
+---
+
+### Nivel educacional padre / madre
+
+```{r, echo=FALSE, fig.align="center", results="asis"}
+#Descriptivos puntaje prueba de conocimiento
+#Base de datos de prueba 
+#ed <- subset(bbdd, select = c(242:251))
+#Parte 1 codificación del nivel educativo del repondente (1) y su cónyuge/pareja (2).
+#Nivel educacional del respondente (1)
+#Identificamos el nivel educativo (columna con valor 1)
+num1 <- apply(bbdd[242:251], 1, function(row) which(row == 1))
+bbdd$educ1 <- sapply(num1, function(x){as.numeric(x[1])})
+#Observamos que hay columnas duplicadas (valor 1 para dos columnas distintas)
+num1_rep <- apply(bbdd[242:251], 1, function(row) which(row == 1))
+bbdd$educ1_rep <- sapply(num1_rep, function(x){as.numeric(x[2])})
+#Eliminamos estos duplicados
+bbdd$educ1[bbdd$educ1_rep!=is.na(bbdd$educ1_rep)] <- NA
+
+#Nivel educacional del cónyuge/pareja (2)
+#Identificamos el nivel educativo (columna con valor 2)
+num2 <- apply(bbdd[242:251], 1, function(row) which(row == 2))
+bbdd$educ2 <- sapply(num2, function(x){as.numeric(x[1])})
+#Observamos que hay columnas duplicadas (valor 2 para dos columnas distintas)
+num2_rep <- apply(bbdd[242:251], 1, function(row) which(row == 2))
+bbdd$educ2_rep <- sapply(num2_rep, function(x){as.numeric(x[2])})
+#Eliminamos estos duplicados
+bbdd$educ2[bbdd$educ2_rep!=is.na(bbdd$educ2_rep)] <- NA
+
+#Removemos variables y objetos auxiliares
+rm(num1, num1_rep, num2, num2_rep)
+bbdd$educ1_rep <- NULL
+bbdd$educ2_rep <- NULL
+
+#En función al género del respondente generamos las variables que identifican el nivel educacional alcanzado por el padre y la madre: 
+
+#Educación del padre
+bbdd$educpadre <-ifelse(bbdd$genero==0, bbdd$educ1, NA)
+bbdd$educpadre <-ifelse(is.na(bbdd$educpadre), bbdd$educ2, bbdd$educpadre)
+
+#Educación de la madre
+bbdd$educmadre <-ifelse(bbdd$genero==1, bbdd$educ1, NA)
+bbdd$educpadre <-ifelse(is.na(bbdd$educpadre), bbdd$educ2, bbdd$educpadre)
+
+#Educación del padre o la madre (Máximo nivel de uno de los daos)
+bbdd$educ_pa_ma <- pmax(bbdd$educmadre, bbdd$educpadre, na.rm = T)
+
+#Descriptivos
+educ <- subset(bbdd, select = c("educ_pa_ma"))
+educ <- na.omit(educ)
+stargazer(educ, title = "Descriptivos máximo nivel educativo de los padres", type ='html', font.size = "small", align = TRUE, column.sep.width = "-15pt")
+
+```
+
+
+```{r, echo=FALSE, fig.align="center",  out.width = "380px", results="asis"}
+#Gráficos
+ggplot(data=educ, aes(educ_pa_ma)) + geom_bar(aes(y = ((..count..)/sum(..count..))), stat="count", colour="black")  +
+  scale_y_continuous(labels = scales::percent) +
+  geom_text(aes(label = scales::percent(((..count..)/sum(..count..))),
+                   y= ((..count..)/sum(..count..))), stat= "count", vjust=-.5, size=3.5) +
+  ggtitle("Histograma máxima educación padres (n=4315)") +
+  labs(x = "Niveles educacionales", y = "%") +
+  scale_x_continuous(breaks=c(seq(1,10,1))) 
+
+#Removemos objetos
+rm(educ)
+```
+
+---
+
+### Libros en el hogar
+
+```{r, echo=FALSE, fig.align="center", results="asis"}
+#Libros en el hogar (estudiantes)
+bbdd$libros <- bbdd$alp3
+bbdd$libros <-factor(bbdd$libros, levels = c(1,2,3,4,5), labels = c("0 a 11", "10 a 25", "26 a 100", "101 a 200", "200 o más"))
+libros <- subset(bbdd, select = c("libros"))
+libros <- na.omit(libros)
+
+#Frecuencias
+libros_freq <- libros %>%
+  group_by(libros)%>%
+  summarize(n=n())%>%
+  mutate(prop=n/sum(n)*100) 
+libros_freq$prop <- round(libros_freq$prop, digits = 1)
+total <- c("Total", 6267, 100)
+libros_freq <- rbind(libros_freq, total)
+```
+
+```{r, echo=FALSE, fig.align="center",  out.width = "550px", results="asis"}
+#Graficamos cantidad de libros en el hogar
+ggplot(data=libros, aes(libros)) + geom_bar(aes(y = ((..count..)/sum(..count..))), stat="count", colour="black") + 
+  scale_x_discrete(labels = c("0 a 11","10 a 25","26 a 100","101 a 200","200 o más")) +     scale_y_continuous(labels = scales::percent) +
+  geom_text(aes(label = scales::percent(((..count..)/sum(..count..))),
+                   y= ((..count..)/sum(..count..))), stat= "count", vjust=-.5, size=3.5) +
+  ggtitle("Libros en el hogar del estudiantes (n=6267)") +
+  labs(x = "Cantidad de libros", y = "%") 
+
+#Removemos  
+rm(libros_freq, libros, total)
+```
+
+
+---
+
+### Clima Escolar 
+
+```{r, echo=FALSE, fig.align="center",  out.width = "550px", results="asis"}
+#Codificamos nuevas variables
+bbdd$clima1 <- bbdd$alp5_1
+bbdd$clima2 <- bbdd$alp5_2
+bbdd$clima3 <- bbdd$alp5_3
+bbdd$clima4 <- bbdd$alp5_4
+bbdd$clima5 <- bbdd$alp5_5
+bbdd$clima6 <- bbdd$alp5_6
+bbdd$clima7 <- bbdd$alp5_7
+bbdd$clima8 <- bbdd$alp5_8
+bbdd$clima9 <- bbdd$alp5_9
+bbdd$clima10 <- bbdd$alp5_10
+
+Hmisc::label(bbdd$clima1) <- 'Trato justo'
+Hmisc::label(bbdd$clima2) <- 'Buena relación estudiante/profesor'
+Hmisc::label(bbdd$clima3) <- 'Interes por bienestar estudiante'
+Hmisc::label(bbdd$clima4) <- 'Sentirse escuchado'
+Hmisc::label(bbdd$clima5) <- 'Ayuda extra'
+Hmisc::label(bbdd$clima6) <- 'Detener el bullying'
+Hmisc::label(bbdd$clima7) <- 'Trato respetuoso entre estudiantes'
+Hmisc::label(bbdd$clima8) <- 'Buena relación entre estudiantes'
+Hmisc::label(bbdd$clima9) <- 'Sentirse seguro'
+Hmisc::label(bbdd$clima10) <- 'Miedo bullying'
+
+#Seleccionamos 
+clima <- subset(bbdd, select = c("clima1","clima2","clima3","clima4","clima5",
+                                 "clima6","clima7","clima8","clima9","clima10"))
+clima2 <- na.omit(clima)
+
+#Gráficos
+plot_likert(clima,
+            axis.titles = "Clima escolar: escuela y profesores",
+            geom.colors = "PuBu", # colorbrewer2.org para temas 
+            legend.labels = c("Muy en desacuerdo", "En descuerdo", "De acuerdo", "Muy de acuerdo"),
+            catcount = 4,
+            sort.frq = "neg.asc", # sort descending
+            digits = 0,
+            geom.size = 0.8) 
+```
+
+---
+
+### Clima Escolar II
+
+```{r, echo=FALSE, fig.align="center",  out.width = "500px", results="asis"}
+#Correlaciones policóricas
+cor <- polychoric(clima2, na.rm=TRUE)
+cor <- cor[["rho"]]
+cor <- round(cor,2)
+
+library(corrplot)
+corrplot(cor, method="color",  
+         type="upper", order="hclust", 
+         addCoef.col = "black", # Add coefficient of correlation
+         tl.col="black", tl.srt=45, #Text label color and rotation
+         # Combine with significance         # hide correlation coefficient on the principal diagonal
+         diag=FALSE) 
+```
+
+---
+
+### Clima Escolar III
+
+```{r, echo=FALSE, fig.align="center",  out.width = "400px", results="asis"}
+sjt.fa(clima, rotation = "promax", method="pa", nmbr.fctr=3, title = "Análisis factorial escala")
+```
+
+---
+
+### Clima Escolar IV
+
+```{r, echo=FALSE, fig.align="center",  out.width = "300px", results="asis"}
+#Construímos el indicador de clima escolar (sumativo continuo). Se excluye la categoría 10. 
+bbdd$clima_esc <- bbdd$clima1 + bbdd$clima2 + bbdd$clima3 + bbdd$clima4 + 
+  bbdd$clima5 + bbdd$clima6 + bbdd$clima7 + bbdd$clima8 + bbdd$clima9  
+#Ajustamos para que parta de 1
+bbdd$clima_esc <- bbdd$clima_esc - 8
+clima <- subset(bbdd, select = c("clima_esc"))
+
+#Descriptivos
+stargazer(clima, title = "Descriptivos escala de clima escolar", type ='html', font.size = "small", align = TRUE, column.sep.width = "-15pt")
+```
+
+```{r, echo=FALSE, fig.align="center",  out.width = "390px", results="asis"}
+#Gráficos
+ggplot(data=clima, aes(clima_esc)) + geom_histogram(aes(y =..density..),binwidth=1, colour="black") + ggtitle("Histograma Clima Escolar (n=5630)") +
+  scale_x_continuous(breaks = c(1:28)) +
+  labs(x = "Puntaje", y = "") +
+    stat_function(fun = dnorm, 
+        args = list(mean = mean(clima[,1], na.rm = TRUE), 
+                    sd = sd(clima[,1], na.rm = TRUE)), 
+        colour = 'darkred', size = 1) 
+
+
+#Removemos
+rm(clima, clima2, cor)
+```
+
+---
+
+### Discusión en la sala de clases
+
+```{r, echo=FALSE, fig.align="center",  out.width = "500px", results="asis"}
+#Codificamos nuevas variables
+bbdd$discusion1 <- bbdd$alp15_1
+bbdd$discusion2 <- bbdd$alp15_2
+bbdd$discusion3 <- bbdd$alp15_3
+bbdd$discusion4 <- bbdd$alp15_4
+bbdd$discusion5 <- bbdd$alp15_5
+bbdd$discusion6 <- bbdd$alp15_6
+
+Hmisc::label(bbdd$discusion1) <- 'Estimulo a formar opiniones propias (profesores)'
+Hmisc::label(bbdd$discusion2) <- 'Estimulo a expresar opiniones (profesores)'
+Hmisc::label(bbdd$discusion3) <- 'Proponer hechos políticos a discutir (estudiantes)'
+Hmisc::label(bbdd$discusion4) <- 'Expresar opiniones distintas al resto (estudiantes)'
+Hmisc::label(bbdd$discusion5) <- 'Estimulo a discutir con otros (profesores)'
+Hmisc::label(bbdd$discusion6) <- 'Temas desde distintos enfoques (profesores)'
+
+#Seleccionamos 
+discusion <- subset(bbdd, select = c("discusion1","discusion2","discusion3","discusion4",
+                                 "discusion5", "discusion6"))
+discusion2 <- na.omit(discusion)
+
+#Gráficos
+plot_likert(discusion,
+            axis.titles = "Clima escolar: espacios de discusión",
+            geom.colors = "PuBu", # colorbrewer2.org para temas 
+            legend.labels = c("Nunca", "Rara vez", "A veces", "Frecuentemente"),
+            catcount = 4,
+            sort.frq = "neg.asc", # sort descending
+            digits = 0,
+            geom.size = 0.8) 
+```
+
+---
+
+### Discusión en la sala de clases II
+
+```{r, echo=FALSE, fig.align="center",  out.width = "500px", results="asis"}
+#Correlaciones policóricas
+cor <- polychoric(discusion2, na.rm=TRUE)
+cor <- cor[["rho"]]
+cor <- round(cor,2)
+
+library(corrplot)
+corrplot(cor, method="color",  
+         type="upper", order="hclust", 
+         addCoef.col = "black", # Add coefficient of correlation
+         tl.col="black", tl.srt=45, #Text label color and rotation
+         # Combine with significance         # hide correlation coefficient on the principal diagonal
+         diag=FALSE) 
+```
+
+---
+
+### Discusión en la sala de clases III
+
+```{r, echo=FALSE, fig.align="center",  out.width = "400px", results="asis"}
+sjt.fa(discusion2, rotation = "promax", method="pa", nmbr.fctr=2, title = "Análisis factorial escala")
+```
+
+---
+
+### Discusión en la sala de clases IV
+
+```{r, echo=FALSE, fig.align="center",  out.width = "300px", results="asis"}
+#Construímos el indicador de clima escolar (sumativo continuo)
+bbdd$discusion <- bbdd$discusion3 + bbdd$discusion4 + bbdd$discusion5 + bbdd$discusion6
+
+#Ajustamos para que parta de 1
+bbdd$discusion <- bbdd$discusion - 4
+discusion <- subset(bbdd, select = c("discusion"))
+discusion <- na.omit(discusion)
+
+#Descriptivos
+stargazer(discusion, title = "Descriptivos discusión en la sala de clases", type ='html', font.size = "small", align = TRUE, column.sep.width = "-15pt")
+```
+
+
+```{r, echo=FALSE, fig.align="center",  out.width = "390px", results="asis"}
+#Gráficos
+ggplot(data=discusion, aes(discusion)) + geom_histogram(aes(y =..density..),binwidth=1, colour="black") + ggtitle("Histograma Discusión en la escuela (n=5880)") +
+  scale_x_continuous(breaks = c(1:19)) +
+  labs(x = "Frecuencia", y = "") +
+    stat_function(fun = dnorm, 
+        args = list(mean = mean(discusion[,1], na.rm = TRUE), 
+                    sd = sd(discusion[,1], na.rm = TRUE)), 
+        colour = 'darkred', size = 1) 
+
+#Removemos
+rm(discusion, discusion2, cor)
+```
+
+---
+
+## Tema 1: Interés Político 
+
+### ¿Cuánto te interesas por temas políticos y sociales?
+
+```{r, echo=FALSE, fig.align="center",  out.width = "450px", results="asis"}
+#Generamos variables
+bbdd$intpol_al <- bbdd$alp16
+bbdd$intpol_pap <- bbdd$pap17
+intpol <- subset(bbdd, select = c("intpol_al", "intpol_pap"))
+
+#Removemos missing
+intpol <- na.omit(intpol)
+intpol$intpol_al <-factor(intpol$intpol_al, levels = c(1,2,3,4), labels = c("Nada", "Poco", "Bastante", "Mucho"))
+intpol$intpol_pap <-factor(intpol$intpol_pap, levels = c(1,2,3,4), labels = c("Nada", "Poco", "Bastante", "Mucho"))
+
+#Gráfico 
+alumnos <- ggplot(data=intpol, aes(intpol$intpol_al)) + geom_bar(aes(y = ((..count..)/sum(..count..))), stat="count", colour="black") + 
+  scale_y_continuous(labels = scales::percent) +
+  geom_text(aes(label = scales::percent(((..count..)/sum(..count..))),
+                   y= ((..count..)/sum(..count..))), stat= "count", vjust=-.5, size=3.5) +
+  ggtitle("Interés política: alumnos (n=6119)") +
+  labs(x = "Nivel de interés", y = "%") 
+
+padres <- ggplot(data=intpol, aes(intpol$intpol_pap)) + geom_bar(aes(y = ((..count..)/sum(..count..))), stat="count", colour="black") + 
+  scale_y_continuous(labels = scales::percent) +
+  geom_text(aes(label = scales::percent(((..count..)/sum(..count..))),
+                   y= ((..count..)/sum(..count..))), stat= "count", vjust=-.5, size=3.5) +
+  ggtitle("Interés política: padres (n=6119)") +
+  labs(x = "Nivel de interés", y = "%") 
+#Revisamos los gráficos
+ggarrange(alumnos, padres, ncol = 2, nrow = 1)
+
+```
+
+---
+
+## Tema 1: Interés Político 
+
+### Correlaciones Polícóricas: 0.15
+
+**Eje Y**: Interés Hijos
+**Eje X**: Interés Padres
+
+```{r, echo=FALSE, fig.align="center",  out.width = "450px", results="asis"}
+library(vcd)
+intpol <- na.omit(intpol)
+a <- table(intpol$intpol_al, intpol$intpol_pap)
+agreementplot(t(a), ylab_rot=90, ylab_just = "center") 
+rm(intpol, alumnos, padres, a)
+```
+
+---
+
+## Tema 1: Interés Político 
+
+```{r echo=FALSE, fig.align="center", message=FALSE, warning=FALSE, out.width="100px", results="asis"}
+#Ajustamos variable
+#Variable continua
+Hmisc::label(bbdd$intpol_al) <- 'Interés Político (Alumnos)'
+Hmisc::label(bbdd$intpol_pap) <- 'Interés Político (Padres)'
+#Variable Categórica
+bbdd$intpol_alc <-factor(bbdd$intpol_al, levels = c(1,2,3,4), labels = c("Nada", "Poco", "Bastante", "Mucho"))
+bbdd$intpol_papc <-factor(bbdd$intpol_pap, levels = c(1,2,3,4), labels = c("Nada", "Poco", "Bastante", "Mucho"))
+
+#Modelo de regresión múltiple lineal
+#Base de datos para estimación
+bbdd1 <- subset(bbdd, select = c("intpol_al", "intpol_pap", "puntaje", "sexo", "clima_esc", "discusion", "educ_pa_ma", "libros"))
+
+#Modelos
+m1 <- lm(intpol_al~intpol_pap, data=bbdd1)
+m2 <- lm(intpol_al~intpol_pap + puntaje + sexo, data=bbdd1)
+m3 <- lm(intpol_al~intpol_pap + puntaje + sexo + clima_esc + discusion + libros, data=bbdd1)
+#Interacciones
+m4 <- lm(intpol_al~intpol_pap + puntaje + sexo + clima_esc + discusion + intpol_pap*libros,  data=bbdd1)
+m5 <- lm(intpol_al~intpol_pap + sexo + clima_esc + discusion + libros + intpol_pap*puntaje,  data=bbdd1)
+m6 <- lm(intpol_al~intpol_pap + puntaje + sexo + clima_esc + libros + intpol_pap*discusion,  data=bbdd1)
+m7 <- lm(intpol_al~intpol_pap + puntaje + sexo + discusion + libros + intpol_pap*clima_esc,  data=bbdd1)
+
+#Tabla con las regresiones
+#stargazer(m1,m2,m3,m4,m5,m6,m7,order=c(1,2,4,5,7,9:12),
+#          covariate.labels=c("Interés politico (Padre)", "Conocimiento cívico", "Hombre", "Clima Escolar", "Discusion", "Libros: 10 a 25", "Libros: 26 a 100", "Libros: 101 a 102", "Libros: 200 o más"),
+#          column.labels=c("Modelo","Modelo","Modelo","Modelo","Modelo", "Modelo","Modelo", "Modelo"), 
+#          dep.var.caption  = "Variable Dependiente",
+#          dep.var.labels   = "Interés en política (estudiante)",
+#          type ='html', font.size = "small", align = TRUE, omit.stat=c("f", "ser"), #column.sep.width = "-15pt")
+tab_model(m1,m2,m3, auto.label = F, show.ci=F)
+
+```
+
+---
+
+## Tema 1: Interés Político 
+
+
+```{r, echo=FALSE, fig.align="center", results="asis"}
+#screenreg(m7)
+m41 <- plot_model(m4, type = "int", title = "Interacción interés político padres y libros en el hogar (n=5238)", mdrt.values = "meansd", legend.title="Libros")
+
+m51 <- plot_model(m5, type = "int", title = "Interacción interés político padres y conocimiento civico (n=5238)", mdrt.values = "meansd", legend.title="Conocimiento")
+
+ggarrange(m41, m51, ncol = 1, nrow = 2)
+
+```
+
+---
+
+## Tema 1: Interés Político
+
+```{r, echo=FALSE, fig.align="center", results="asis"}
+m61 <- plot_model(m6, type = "int", title = "Interacción interés político padres y discusion en la sala de clases (n=5238)", mdrt.values = "meansd", legend.title="Discusión")
+
+m71 <- plot_model(m7, type = "int", title = "Interacción interés político padres y clima escolar (n=5238)", mdrt.values = "meansd", auto.label = F, legend.title="Clima")
+
+ggarrange(m61, m71, ncol = 1, nrow = 2)
+
+rm(bbdd1,m1,m2,m3,m4,m5,m6,m7,m41,m51,m61,m71)
+```
+
+---
+
+## Tema 2: Ideas Autoritarias
+
+### Las dictaduras se justifican cuando traen beneficios económicos  
+
+```{r, echo=FALSE, fig.align="center",  out.width = "450px", results="asis"}
+#Generamos variables: Las dictaduras se justifican cuando traen beneficios económicos
+bbdd$dicta_al <- bbdd$alp28_2
+bbdd$dicta_pap <- bbdd$pap19_4
+dicta <- subset(bbdd, select = c("dicta_al", "dicta_pap"))
+
+#Removemos missing
+dicta <- na.omit(dicta)
+dicta$dicta_al <-factor(dicta$dicta_al, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
+dicta$dicta_pap <-factor(dicta$dicta_pap, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
+
+#Gráfico 
+alumnos <- ggplot(data=dicta, aes(dicta$dicta_al)) + geom_bar(aes(y = ((..count..)/sum(..count..))), stat="count", colour="black") + 
+  scale_y_continuous(labels = scales::percent) +
+  geom_text(aes(label = scales::percent(((..count..)/sum(..count..))),
+                   y= ((..count..)/sum(..count..))), stat= "count", vjust=-.5, size=3.5) +
+  ggtitle("Justificación por beneficios económicos: alumnos (n=5453)") +
+  theme(plot.title = element_text(size = 9),axis.text.x = element_text(size = 9)) +
+  labs(x = "Nivel de acuerdo", y = "%") 
+
+padres <- ggplot(data=dicta, aes(dicta$dicta_pap)) + geom_bar(aes(y = ((..count..)/sum(..count..))), stat="count", colour="black") + 
+  scale_y_continuous(labels = scales::percent) +
+  geom_text(aes(label = scales::percent(((..count..)/sum(..count..))),
+                   y= ((..count..)/sum(..count..))), stat= "count", vjust=-.5, size=3.5) +
+  ggtitle("Justificación por beneficios económicos: padres (n=5453)") +
+  theme(plot.title = element_text(size = 9),axis.text.x = element_text(size = 9)) +
+  labs(x = "Nivel de acuerdo", y = "%") 
+#Revisamos los gráficos
+ggarrange(alumnos, padres, ncol = 2, nrow = 1)
+
+```
+
+---
+
+## Tema 2: Ideas Autoritarias
+
+### Correlaciones Polícóricas: 0.13
+
+**Eje Y**: Justificación Hijos
+**Eje X**: Justificación Padres
+
+```{r, echo=FALSE, fig.align="center",  out.width = "450px", results="asis"}
+library(vcd)
+dicta <- na.omit(dicta)
+a <- table(dicta$dicta_al, dicta$dicta_pap)
+agreementplot(t(a), ylab_rot=90, ylab_just = "center") 
+rm(dicta, alumnos, padres, a)
+```
+
+
+---
+
+## Tema 2: Ideas Autoritarias
+
+```{r echo=FALSE, fig.align="center", message=FALSE, warning=FALSE, out.width="100px", results="asis"}
+#Ajustamos variable
+#Variable continua
+Hmisc::label(bbdd$dicta_al) <- 'Justificación Dictadura (Alumnos)'
+Hmisc::label(bbdd$dicta_pap) <- 'Justificación Dictadura (Padres)'
+#Variable Categórica
+bbdd$dicta_alc <-factor(bbdd$dicta_al, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "En desacuerdo", "De acuerdo", "Muy de acuerdo"))
+bbdd$dicta_papc <-factor(bbdd$dicta_pap, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "En desacuerdo", "De acuerdo", "Muy de acuerdo"))
+
+#Modelo de regresión múltiple lineal
+#Base de datos para estimación
+bbdd1 <- subset(bbdd, select = c("dicta_al", "dicta_pap", "puntaje", "sexo", "clima_esc", "discusion", "educ_pa_ma", "libros"))
+
+#Modelos
+m1 <- lm(dicta_al~dicta_pap, data=bbdd1)
+m2 <- lm(dicta_al~dicta_pap + puntaje + sexo, data=bbdd1)
+m3 <- lm(dicta_al~dicta_pap + puntaje + sexo + clima_esc + discusion + libros, data=bbdd1)
+#Interacciones
+m4 <- lm(dicta_al~dicta_pap + puntaje + sexo + clima_esc + discusion + dicta_pap*libros,  data=bbdd1)
+m5 <- lm(dicta_al~dicta_pap + sexo + clima_esc + discusion + libros + dicta_pap*puntaje,  data=bbdd1)
+m6 <- lm(dicta_al~dicta_pap + puntaje + sexo + clima_esc + libros + dicta_pap*discusion,  data=bbdd1)
+m7 <- lm(dicta_al~dicta_pap + puntaje + sexo + discusion + libros + dicta_pap*clima_esc,  data=bbdd1)
+
+#Tabla con las regresiones
+#stargazer(m1,m2,m3,m4,m5,m6,m7,order=c(1,2,4,5,7,9:12),
+#          covariate.labels=c("Interés politico (Padre)", "Conocimiento cívico", "Hombre", "Clima Escolar", "Discusion", "Libros: 10 a 25", "Libros: 26 a 100", "Libros: 101 a 102", "Libros: 200 o más"),
+#          column.labels=c("Modelo","Modelo","Modelo","Modelo","Modelo", "Modelo","Modelo", "Modelo"), 
+#          dep.var.caption  = "Variable Dependiente",
+#          dep.var.labels   = "Interés en política (estudiante)",
+#          type ='html', font.size = "small", align = TRUE, omit.stat=c("f", "ser"), #column.sep.width = "-15pt")
+tab_model(m1,m2,m3, auto.label = F, show.ci=F)
+```
+
+
+---
+
+## Tema 2: Ideas Autoritarias
+
+```{r, echo=FALSE, fig.align="center", results="asis"}
+#screenreg(list(m4,m5,m6,m7))
+m41 <- plot_model(m4, type = "int", title = "Interacción justificación padres y libros en el hogar (n=4712)", mdrt.values = "meansd", legend.title="Libros")
+
+m51 <- plot_model(m5, type = "int", title = "Interacción justificación padres y conocimiento civico (n=4712)", mdrt.values = "meansd", legend.title="Conocimiento")
+
+ggarrange(m41, m51, ncol = 1, nrow = 2)
+
+```
+
+
+---
+
+## Tema 2: Ideas Autoritarias
+
+```{r, echo=FALSE, fig.align="center", results="asis"}
+m61 <- plot_model(m6, type = "int", title = "Interacción justificación padres y discusion en la sala de clases (n=4712)", mdrt.values = "meansd", legend.title="Discusión")
+
+m71 <- plot_model(m7, type = "int", title = "Interacción justificación padres y clima escolar (n=4712)", mdrt.values = "meansd", auto.label = F, legend.title="Clima")
+
+ggarrange(m61, m71, ncol = 1, nrow = 2)
+rm(bbdd1,m1,m2,m3,m4,m5,m6,m7,m41,m51,m61,m71)
+```
+
+---
+
+## Tema 2: Ideas Autoritarias
+
+### La concentración del poder en una sola persona garantiza el orden y la seguridad
+
+```{r, echo=FALSE, fig.align="center",  out.width = "400px", results="asis"}
+#Generamos variables: La concentración del poder en una sola persona garantiza el orden y la seguridad 
+bbdd$dicta2_al <- bbdd$alp28_4
+bbdd$dicta2_pap <- bbdd$pap19_5
+dicta <- subset(bbdd, select = c("dicta2_al", "dicta2_pap"))
+
+#Removemos missing
+dicta <- na.omit(dicta)
+dicta$dicta2_al <-factor(dicta$dicta2_al, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
+dicta$dicta2_pap <-factor(dicta$dicta2_pap, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
+
+#Gráfico 
+alumnos <- ggplot(data=dicta, aes(dicta$dicta2_al)) + geom_bar(aes(y = ((..count..)/sum(..count..))), stat="count", colour="black") + 
+  scale_y_continuous(labels = scales::percent) +
+  geom_text(aes(label = scales::percent(((..count..)/sum(..count..))),
+                   y= ((..count..)/sum(..count..))), stat= "count", vjust=-.5, size=3.5) +
+  ggtitle("Concentración del poder: alumnos (n=5401)") +
+  theme(plot.title = element_text(size = 9),axis.text.x = element_text(size = 9)) +
+  labs(x = "Nivel de acuerdo", y = "%") 
+
+padres <- ggplot(data=dicta, aes(dicta$dicta2_pap)) + geom_bar(aes(y = ((..count..)/sum(..count..))), stat="count", colour="black") + 
+  scale_y_continuous(labels = scales::percent) +
+  geom_text(aes(label = scales::percent(((..count..)/sum(..count..))),
+                   y= ((..count..)/sum(..count..))), stat= "count", vjust=-.5, size=3.5) +
+  ggtitle("Concentración del poder: padres (n=5401)") +
+  theme(plot.title = element_text(size = 9),axis.text.x = element_text(size = 9)) +
+  labs(x = "Nivel de acuerdo", y = "%") 
+#Revisamos los gráficos
+ggarrange(alumnos, padres, ncol = 2, nrow = 1)
+```
+
+---
+
+## Tema 2: Ideas Autoritarias
+
+### Correlaciones Polícóricas: -0.02
+
+**Eje Y**: Justificación Hijos
+**Eje X**: Justificación Padres
+
+```{r, echo=FALSE, fig.align="center",  out.width = "450px", results="asis"}
+library(vcd)
+dicta <- na.omit(dicta)
+a <- table(dicta$dicta2_al, dicta$dicta2_pap)
+agreementplot(t(a), ylab_rot=90, ylab_just = "center") 
+rm(dicta, alumnos, padres, a)
+```
+
+
+---
+
+## Tema 2: Ideas Autoritarias
+
+```{r echo=FALSE, fig.align="center", message=FALSE, warning=FALSE, out.width="100px", results="asis"}
+#Ajustamos variable
+#Variable continua
+Hmisc::label(bbdd$dicta2_al) <- 'Concentración del poder (Alumnos)'
+Hmisc::label(bbdd$dicta2_pap) <- 'Concentración del poder (Padres)'
+#Variable Categórica
+bbdd$dicta2_alc <-factor(bbdd$dicta2_al, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "En desacuerdo", "De acuerdo", "Muy de acuerdo"))
+bbdd$dicta2_papc <-factor(bbdd$dicta2_pap, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "En desacuerdo", "De acuerdo", "Muy de acuerdo"))
+
+#Modelo de regresión múltiple lineal
+#Base de datos para estimación
+bbdd1 <- subset(bbdd, select = c("dicta2_al", "dicta2_pap", "puntaje", "sexo", "clima_esc", "discusion", "educmadre", "educpadre", "libros"))
+
+#Modelos
+m1 <- lm(dicta2_al~dicta2_pap, data=bbdd1)
+m2 <- lm(dicta2_al~dicta2_pap + puntaje + sexo, data=bbdd1)
+m3 <- lm(dicta2_al~dicta2_pap + puntaje + sexo + clima_esc + discusion + libros, data=bbdd1)
+#Interacciones
+m4 <- lm(dicta2_al~dicta2_pap + puntaje + sexo + clima_esc + discusion + dicta2_pap*libros,  data=bbdd1)
+m5 <- lm(dicta2_al~dicta2_pap + sexo + clima_esc + discusion + libros + dicta2_pap*puntaje,  data=bbdd1)
+m6 <- lm(dicta2_al~dicta2_pap + puntaje + sexo + clima_esc + libros + dicta2_pap*discusion,  data=bbdd1)
+m7 <- lm(dicta2_al~dicta2_pap + puntaje + sexo + discusion + libros + dicta2_pap*clima_esc,  data=bbdd1)
+
+#Tabla con las regresiones
+#stargazer(m1,m2,m3,m4,m5,m6,m7,order=c(1,2,4,5,7,9:12),
+#          covariate.labels=c("Interés politico (Padre)", "Conocimiento cívico", "Hombre", "Clima Escolar", "Discusion", "Libros: 10 a 25", "Libros: 26 a 100", "Libros: 101 a 102", "Libros: 200 o más"),
+#          column.labels=c("Modelo","Modelo","Modelo","Modelo","Modelo", "Modelo","Modelo", "Modelo"), 
+#          dep.var.caption  = "Variable Dependiente",
+#          dep.var.labels   = "Interés en política (estudiante)",
+#          type ='html', font.size = "small", align = TRUE, omit.stat=c("f", "ser"), #column.sep.width = "-15pt")
+tab_model(m1,m2,m3, auto.label = F, show.ci=F)
+```
+
+
+---
+
+## Tema 2: Ideas Autoritarias
+
+```{r, echo=FALSE, fig.align="center", results="asis"}
+#screenreg(list(m4,m5,m6,m7))
+m41 <- plot_model(m4, type = "int", title = "Interacción justificación padres y libros en el hogar (n=4692)", mdrt.values = "meansd", legend.title="Libros")
+
+m51 <- plot_model(m5, type = "int", title = "Interacción justificación padres y conocimiento civico (n=4692)", mdrt.values = "meansd", legend.title="Conocimiento")
+
+ggarrange(m41, m51, ncol = 1, nrow = 2)
+
+```
+
+
+---
+
+## Tema 2: Ideas Autoritarias
+
+```{r, echo=FALSE, fig.align="center", results="asis"}
+m61 <- plot_model(m6, type = "int", title = "Interacción justificación padres y discusion en la sala de clases (n=4692)", mdrt.values = "meansd", legend.title="Discusión")
+
+m71 <- plot_model(m7, type = "int", title = "Interacción justificación padres y clima escolar (n=4692)", mdrt.vaues = "meansd", auto.label = F, legend.title="Clima")
+
+ggarrange(m61, m71, ncol = 1, nrow = 2)
+rm(bbdd1,m1,m2,m3,m4,m5,m6,m7,m41,m51,m61,m71)
+```
+
+---
+
+## Tema 3: Valoración de la democracia
+
+```{r, echo=FALSE, fig.align="center",  out.width = "500px", results="asis"}
+#Codificamos nuevas variables (hijos)
+bbdd$demo1 <- bbdd$alp28_1
+bbdd$demo2 <- bbdd$alp28_3
+bbdd$demo3 <- bbdd$alp28_5
+
+Hmisc::label(bbdd$demo1) <- 'Mejor forma de gobierno que asegura la participación'
+Hmisc::label(bbdd$demo2) <- 'Garantizar la libertad de expresión'
+Hmisc::label(bbdd$demo3) <- 'Fomentan mayor igualdad'
+
+#Seleccionamos 
+demo <- subset(bbdd, select = c("demo1","demo2","demo3"))
+demo2 <- na.omit(demo)
+
+#Gráficos
+a <- plot_likert(demo2,
+            axis.titles = "Hijos",
+            geom.colors = "PuBu", # colorbrewer2.org para temas 
+            legend.labels = c("Muy en desacuerdo", "En descuerdo", "De acuerdo", "Muy de acuerdo"),
+            catcount = 4,
+            sort.frq = "neg.asc", # sort descending
+            digits = 0,
+            geom.size = 0.8) 
+
+#Codificamos nuevas variables (padres)
+bbdd$demo21 <- bbdd$pap19_1
+bbdd$demo22 <- bbdd$pap19_2
+bbdd$demo23 <- bbdd$pap19_3
+
+Hmisc::label(bbdd$demo21) <- 'Mejor forma de gobierno que asegura la participación'
+Hmisc::label(bbdd$demo22) <- 'Garantizar la libertad de expresión'
+Hmisc::label(bbdd$demo23) <- 'Fomentan mayor igualdad'
+
+#Seleccionamos 
+demo22 <- subset(bbdd, select = c("demo21","demo22","demo23"))
+demop <- na.omit(demo22)
+
+#Gráficos
+b <- plot_likert(demop,
+            axis.titles = "Padres",
+            geom.colors = "PuBu", # colorbrewer2.org para temas 
+            legend.labels = c("Muy en desacuerdo", "En descuerdo", "De acuerdo", "Muy de acuerdo"),
+            catcount = 4,
+            sort.frq = "neg.asc", # sort descending
+            digits = 0,
+            geom.size = 0.8) 
+
+ggarrange(a,b, ncol = 1, nrow = 2)
+```
+
+
+---
+
+## Tema 3: Valoración de la democracia
+
+```{r, echo=FALSE, fig.align="center",  out.width = "280px", results="asis"}
+#Correlaciones policóricas (hijos)
+cor <- polychoric(demo2, na.rm=TRUE)
+cor <- cor[["rho"]]
+cor <- round(cor,2)
+
+library(corrplot)
+corrplot(cor, method="color",  
+         type="upper", order="hclust", 
+         addCoef.col = "black", # Add coefficient of correlation
+         tl.col="black", tl.srt=45, #Text label color and rotation
+         # Combine with significance         # hide correlation coefficient on the principal diagonal
+         diag=FALSE) 
+
+#Correlaciones policóricas (padres)
+cor <- polychoric(demop, na.rm=TRUE)
+cor <- cor[["rho"]]
+cor <- round(cor,2)
+
+library(corrplot)
+corrplot(cor, method="color",  
+         type="upper", order="hclust", 
+         addCoef.col = "black", # Add coefficient of correlation
+         tl.col="black", tl.srt=45, #Text label color and rotation
+         # Combine with significance         # hide correlation coefficient on the principal diagonal
+         diag=FALSE) 
+```
+
+---
+
+## Tema 3: Valoración de la democracia
+
+```{r, echo=FALSE, fig.align="center",  out.width = "400px", results="asis"}
+demo2 <- na.omit(demo2)
+sjt.fa(demo2, rotation = "promax", method="ml", nmbr.fctr=2, title = "Análisis factorial escala para estudiantes")
+```
+
+---
+
+## Tema 3: Valoración de la democracia
+
+```{r, echo=FALSE, fig.align="center",  out.width = "400px", results="asis"}
+sjt.fa(demop, rotation = "promax", method="ml", nmbr.fctr=2, title = "Análisis factorial escala para padres")
+```
+
+---
+
+## Tema 3: Valoración de la democracia
+
+### Las democracias son la mejor forma de gobierno porque aseguran la participación 
+
+```{r, echo=FALSE, fig.align="center",  out.width = "400px", results="asis"}
+#Removemos
+rm(a,b,bbdd1,cor,demo,demo2,demo22,demop,m1,m2,m3,m4,m5,m6,m7,m61,m71)
+#Generamos variables: Si el presidente no está de acuerdo con el congreso, debería disolverlo
+bbdd$demo1_al <- bbdd$alp28_1
+bbdd$demo1_pap <- bbdd$pap19_1
+demo <- subset(bbdd, select = c("demo1_al", "demo1_pap"))
+
+#Removemos missing
+demo <- na.omit(demo)
+demo$demo1_al <-factor(demo$demo1_al, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
+demo$demo1_pap <-factor(demo$demo1_pap, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
+
+
+#Gráfico 
+alumnos <- ggplot(data=demo, aes(demo$demo1_al)) + geom_bar(aes(y = ((..count..)/sum(..count..))), stat="count", colour="black") + 
+  scale_y_continuous(labels = scales::percent) +
+  geom_text(aes(label = scales::percent(((..count..)/sum(..count..))),
+                   y= ((..count..)/sum(..count..))), stat= "count", vjust=-.5, size=3.5) +
+  ggtitle("Democracia-participación: alumnos (n=5626)") +
+  theme(plot.title = element_text(size = 9),axis.text.x = element_text(size = 9)) +
+  labs(x = "Nivel de acuerdo", y = "%") 
+
+padres <- ggplot(data=demo, aes(demo$demo1_pap)) + geom_bar(aes(y = ((..count..)/sum(..count..))), stat="count", colour="black") + 
+  scale_y_continuous(labels = scales::percent) +
+  geom_text(aes(label = scales::percent(((..count..)/sum(..count..))),
+                   y= ((..count..)/sum(..count..))), stat= "count", vjust=-.5, size=3.5) +
+  ggtitle("Democracia-participación: padres (n=5626)") +
+  theme(plot.title = element_text(size = 9),axis.text.x = element_text(size = 9)) +
+  labs(x = "Nivel de acuerdo", y = "%") 
+
+#Revisamos los gráficos
+ggarrange(alumnos, padres, ncol = 2, nrow = 1)
+```
+
+---
+
+## Tema 3: Valoración de la democracia
+
+### Correlaciones Polícóricas: 0.19
+
+**Eje Y**: Justificación Hijos
+**Eje X**: Justificación Padres
+
+```{r, echo=FALSE, fig.align="center",  out.width = "450px", results="asis"}
+library(vcd)
+demo2 <- na.omit(demo)
+a <- table(demo2$demo1_al, demo2$demo1_pap)
+agreementplot(t(a), ylab_rot=90, ylab_just = "center") 
+rm(dicta, alumnos, padres, a)
+```
+
+---
+
+## Tema 3: Valoración de la democracia
+
+```{r echo=FALSE, fig.align="center", message=FALSE, warning=FALSE, out.width="100px", results="asis"}
+#Ajustamos variable
+#Variable continua
+Hmisc::label(bbdd$demo1_al) <- 'Valor democracia (Alumnos)'
+Hmisc::label(bbdd$demo1_pap) <- 'Valor democracia (Padres)'
+#Variable Categórica
+bbdd$demo1_alc <-factor(bbdd$demo1_al, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "En desacuerdo", "De acuerdo", "Muy de acuerdo"))
+bbdd$demo1_papc <-factor(bbdd$demo1_pap, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "En desacuerdo", "De acuerdo", "Muy de acuerdo"))
+
+#Modelo de regresión múltiple lineal
+#Base de datos para estimación
+bbdd1 <- subset(bbdd, select = c("demo1_al", "demo1_pap", "puntaje", "sexo", "clima_esc", "discusion", "educmadre", "educpadre", "libros"))
+
+#Modelos
+m1 <- lm(demo1_al~demo1_pap, data=bbdd1)
+m2 <- lm(demo1_al~demo1_pap + puntaje + sexo, data=bbdd1)
+m3 <- lm(demo1_al~demo1_pap + puntaje + sexo + clima_esc + discusion + libros, data=bbdd1)
+#Interacciones
+m4 <- lm(demo1_al~demo1_pap + puntaje + sexo + clima_esc + discusion + demo1_pap*libros,  data=bbdd1)
+m5 <- lm(demo1_al~demo1_pap + sexo + clima_esc + discusion + libros + demo1_pap*puntaje,  data=bbdd1)
+m6 <- lm(demo1_al~demo1_pap + puntaje + sexo + clima_esc + libros + demo1_pap*discusion,  data=bbdd1)
+m7 <- lm(demo1_al~demo1_pap + puntaje + sexo + discusion + libros + demo1_pap*clima_esc,  data=bbdd1)
+
+#Tabla con las regresiones
+#stargazer(m1,m2,m3,m4,m5,m6,m7,order=c(1,2,4,5,7,9:12),
+#          covariate.labels=c("Interés politico (Padre)", "Conocimiento cívico", "Hombre", "Clima Escolar", "Discusion", "Libros: 10 a 25", "Libros: 26 a 100", "Libros: 101 a 102", "Libros: 200 o más"),
+#          column.labels=c("Modelo","Modelo","Modelo","Modelo","Modelo", "Modelo","Modelo", "Modelo"), 
+#          dep.var.caption  = "Variable Dependiente",
+#          dep.var.labels   = "Interés en política (estudiante)",
+#          type ='html', font.size = "small", align = TRUE, omit.stat=c("f", "ser"), #column.sep.width = "-15pt")
+tab_model(m1,m2,m3, auto.label = F, show.ci=F)
+```
+
+---
+
+## Tema 3: Valoración de la democracia
+
+```{r, echo=FALSE, fig.align="center", results="asis"}
+#screenreg(list(m4,m5,m6,m7))
+m41 <- plot_model(m4, type = "int", title = "Interacción valoración democracia padres y libros en el hogar (n=4939)", mdrt.values = "meansd", legend.title="Libros")
+
+m51 <- plot_model(m5, type = "int", title = "Interacción valoración democracia padres y conocimiento civico (n=4839)", mdrt.values = "meansd", legend.title="Conocimiento")
+
+ggarrange(m41, m51, ncol = 1, nrow = 2)
+
+```
+
+
+---
+
+## Tema 3: Valoración de la democracia
+
+```{r, echo=FALSE, fig.align="center", results="asis"}
+m61 <- plot_model(m6, type = "int", title = "Interacción valoración democracia padres y discusion en la sala de clases (n=4839)", mdrt.values = "meansd", legend.title="Discusión")
+
+m71 <- plot_model(m7, type = "int", title = "Interacción valoración democracia padres y clima escolar (n=4839)", mdrt.vaues = "meansd", auto.label = F, legend.title="Clima")
+
+ggarrange(m61, m71, ncol = 1, nrow = 2)
+rm(bbdd1,m1,m2,m3,m4,m5,m6,m7,m41,m51,m61,m71,demo,demo2,a,b,cor,demo22,demop)
+```
+
+---
+
+## Tema 4: Confianza en las instituciones
+
+```{r, echo=FALSE, fig.align="center",  out.width = "500px", results="asis"}
+#Codificamos nuevas variables (hijos)
+bbdd$conf1 <- bbdd$alp27_1
+bbdd$conf2 <- bbdd$alp27_2
+bbdd$conf3 <- bbdd$alp27_3
+bbdd$conf4 <- bbdd$alp27_4
+bbdd$conf5 <- bbdd$alp27_7
+bbdd$conf6 <- bbdd$alp27_8
+
+
+Hmisc::label(bbdd$conf1) <- 'Congreso'
+Hmisc::label(bbdd$conf2) <- 'Tribunales'
+Hmisc::label(bbdd$conf3) <- 'El Gobierno'
+Hmisc::label(bbdd$conf4) <- 'Partidos Políticos'
+Hmisc::label(bbdd$conf5) <- 'Carabineros'
+Hmisc::label(bbdd$conf6) <- 'FFAA'
+
+
+#Seleccionamos 
+conf <- subset(bbdd, select = c("conf1","conf2","conf3","conf4","conf5","conf6"))
+conf2 <- na.omit(conf)
+
+#Gráficos
+a <- plot_likert(conf2,
+            axis.titles = "Hijos",
+            geom.colors = "PuBu", # colorbrewer2.org para temas 
+            legend.labels = c("Nada", "Algo", "Bastante", "Mucho"),
+            catcount = 4,
+            sort.frq = "neg.asc", # sort descending
+            digits = 0,
+            geom.size = 0.8) 
+
+#Codificamos nuevas variables (padres)
+bbdd$conf1pa <- bbdd$pap21_1
+bbdd$conf2pa <- bbdd$pap21_2
+bbdd$conf3pa <- bbdd$pap21_3
+bbdd$conf4pa <- bbdd$pap21_4
+bbdd$conf5pa <- bbdd$pap21_7
+bbdd$conf6pa <- bbdd$pap21_8
+
+Hmisc::label(bbdd$conf1pa) <- 'Congreso'
+Hmisc::label(bbdd$conf2pa) <- 'Tribunales'
+Hmisc::label(bbdd$conf3pa) <- 'El Gobierno'
+Hmisc::label(bbdd$conf4pa) <- 'Partidos Políticos'
+Hmisc::label(bbdd$conf5pa) <- 'Carabineros'
+Hmisc::label(bbdd$conf6pa) <- 'FFAA'
+
+#Seleccionamos 
+confpa <- subset(bbdd, select = c("conf1pa","conf2pa","conf3pa","conf4pa","conf5pa","conf6pa"))
+confpa2 <- na.omit(confpa)
+
+#Gráficos
+b <- plot_likert(confpa2,
+            axis.titles = "Padres",
+            geom.colors = "PuBu", # colorbrewer2.org para temas 
+            legend.labels = c("Nada", "Algo", "Bastante", "Mucho"),
+            catcount = 4,
+            sort.frq = "neg.asc", # sort descending
+            digits = 0,
+            geom.size = 0.8) 
+
+ggarrange(a,b, ncol = 1, nrow = 2)
+```
+
+
+---
+
+## Tema 4: Confianza en las instituciones
+
+```{r, echo=FALSE, fig.align="center",  out.width = "280px", results="asis"}
+#Correlaciones policóricas (hijos)
+cor <- polychoric(conf2, na.rm=TRUE)
+cor <- cor[["rho"]]
+cor <- round(cor,2)
+
+library(corrplot)
+corrplot(cor, method="color",  
+         type="upper", order="hclust", 
+         addCoef.col = "black", # Add coefficient of correlation
+         tl.col="black", tl.srt=45, #Text label color and rotation
+         # Combine with significance         # hide correlation coefficient on the principal diagonal
+         diag=FALSE) 
+
+#Correlaciones policóricas (padres)
+cor <- polychoric(confpa2, na.rm=TRUE)
+cor <- cor[["rho"]]
+cor <- round(cor,2)
+
+library(corrplot)
+corrplot(cor, method="color",  
+         type="upper", order="hclust", 
+         addCoef.col = "black", # Add coefficient of correlation
+         tl.col="black", tl.srt=45, #Text label color and rotation
+         # Combine with significance         # hide correlation coefficient on the principal diagonal
+         diag=FALSE) 
+```
+
+---
+
+## Tema 4: Confianza en las instituciones
+
+```{r, echo=FALSE, fig.align="center",  out.width = "400px", results="asis"}
+sjt.fa(conf2, rotation = "promax", method="pa", nmbr.fctr=2, title = "Análisis factorial escala estudiantes")
+```
+
+---
+
+## Tema 4: Confianza en las instituciones
+
+```{r, echo=FALSE, fig.align="center",  out.width = "400px", results="asis"}
+sjt.fa(confpa2, rotation = "promax", method="pa", nmbr.fctr=2, title = "Análisis factorial escala padres")
+```
+
+
+---
+
+## Tema 4: Confianza en las instituciones
+
+### Instituciones políticas: congreso. tribunales. gobierno y partidos políticos
+
+```{r, echo=FALSE, fig.align="center",  out.width = "400px", results="asis"}
+#Removemos
+rm(a,b,conf,conf2,confpa,confpa2,cor)
+#Generamos variables: Si el presidente no está de acuerdo con el congreso, debería disolverlo
+#Generamos un indicador sumativo para dichas instituciones
+bbdd$civ_confal <- bbdd$conf1 + bbdd$conf2 + bbdd$conf3 + bbdd$conf4 
+bbdd$civ_confpa <- bbdd$conf1pa + bbdd$conf2pa + bbdd$conf3pa + bbdd$conf4pa 
+#Ajustamos la escala
+bbdd$civ_confal <- bbdd$civ_confal - 4
+bbdd$civ_confpa <- bbdd$civ_confpa - 4
+#Concentramos
+conf <- subset(bbdd, select = c("civ_confal", "civ_confpa"))
+#Tabla de descriptivos
+stargazer(conf, title = "Descriptivos confianza en instituciones políticas", type ='html', font.size = "small", align = TRUE, column.sep.width = "-15pt")
+
+```
+
+---
+
+## Tema 4: Confianza en las instituciones
+
+### Correlaciones de Pearson: 0.19
+
+**Eje Y**: Justificación Hijos
+**Eje X**: Justificación Padres
+
+```{r, echo=FALSE, fig.align="center",  out.width = "400px", results="asis"}
+conf <- na.omit(conf)
+ggplot(conf, aes(x=civ_confpa,y=civ_confal )) +
+geom_point(position=position_jitter(w=0.1,h=0)) +
+geom_smooth(method="lm", se=FALSE) +
+xlab('Confianza en instituciones políticas Padres') +
+ylab('Confianza en instituciones políticas Hijos') +
+stat_cor(label.x = 10.2, label.y = 11) 
+```
+
+---
+
+## Tema 4: Confianza en las instituciones
+
+```{r echo=FALSE, fig.align="center", message=FALSE, warning=FALSE, out.width="100px", results="asis"}
+#Ajustamos variable
+#Variable continua
+Hmisc::label(bbdd$civ_confal) <- 'Confianza instituciones políticas (Alumnos)'
+Hmisc::label(bbdd$civ_confpa) <- 'Confianza instituciones políticas (Padres)'
+
+#Modelo de regresión múltiple lineal
+#Base de datos para estimación
+bbdd1 <- subset(bbdd, select = c("civ_confal", "civ_confpa", "puntaje", "sexo", "clima_esc", "discusion", "educmadre", "educpadre", "libros"))
+
+#Modelos
+m1 <- lm(civ_confal~civ_confpa, data=bbdd1)
+m2 <- lm(civ_confal~civ_confpa + puntaje + sexo, data=bbdd1)
+m3 <- lm(civ_confal~civ_confpa + puntaje + sexo + clima_esc + discusion + libros, data=bbdd1)
+#Interacciones
+m4 <- lm(civ_confal~civ_confpa + puntaje + sexo + clima_esc + discusion + civ_confpa*libros,  data=bbdd1)
+m5 <- lm(civ_confal~civ_confpa + sexo + clima_esc + discusion + libros + civ_confpa*puntaje,  data=bbdd1)
+m6 <- lm(civ_confal~civ_confpa + puntaje + sexo + clima_esc + libros + civ_confpa*discusion,  data=bbdd1)
+m7 <- lm(civ_confal~civ_confpa + puntaje + sexo + discusion + libros + civ_confpa*clima_esc,  data=bbdd1)
+
+#Tabla con las regresiones
+#stargazer(m1,m2,m3,m4,m5,m6,m7,order=c(1,2,4,5,7,9:12),
+#          covariate.labels=c("Interés politico (Padre)", "Conocimiento cívico", "Hombre", "Clima Escolar", "Discusion", "Libros: 10 a 25", "Libros: 26 a 100", "Libros: 101 a 102", "Libros: 200 o más"),
+#          column.labels=c("Modelo","Modelo","Modelo","Modelo","Modelo", "Modelo","Modelo", "Modelo"), 
+#          dep.var.caption  = "Variable Dependiente",
+#          dep.var.labels   = "Interés en política (estudiante)",
+#          type ='html', font.size = "small", align = TRUE, omit.stat=c("f", "ser"), #column.sep.width = "-15pt")
+tab_model(m1,m2,m3, auto.label = F, show.ci=F)
+```
+
+---
+
+## Tema 4: Confianza en las instituciones
+
+```{r, echo=FALSE, fig.align="center", results="asis"}
+#screenreg(list(m4,m5,m6,m7))
+m41 <- plot_model(m4, type = "int", title = "Interacción confianza de los padres y libros en el hogar (n=4840)", mdrt.values = "meansd", legend.title="Libros")
+
+m51 <- plot_model(m5, type = "int", title = "Interacción confianza de los padres y conocimiento civico (n=4840)", mdrt.values = "meansd", legend.title="Conocimiento")
+
+ggarrange(m41, m51, ncol = 1, nrow = 2)
+
+```
+
+
+---
+
+## Tema 4: Confianza en las instituciones
+
+```{r, echo=FALSE, fig.align="center", results="asis"}
+m61 <- plot_model(m6, type = "int", title = "Interacción confianza de los padres y discusion en la sala de clases (n=4840)", mdrt.values = "meansd", legend.title="Discusión")
+
+m71 <- plot_model(m7, type = "int", title = "Interacción confianza de los padres y clima escolar (n=4840)", mdrt.vaues = "meansd", auto.label = F, legend.title="Clima")
+
+ggarrange(m61, m71, ncol = 1, nrow = 2)
+rm(bbdd1,m1,m2,m3,m4,m5,m6,m7,m41,m51,m61,m71,conf)
+```
+
+
+---
+
+## Tema 5: Participación Política
+
+### Escala disponible en el cuestionario de estudiantes
+
+```{r, echo=FALSE, fig.align="center",  out.width = "400px", results="asis"}
+rm(a,b,conf, conf2,confpa, confpa2)
+#Codificamos nuevas variables (hijos)
+bbdd$ppal1 <- bbdd$alp17_1
+bbdd$ppal2 <- bbdd$alp17_2
+bbdd$ppal3 <- bbdd$alp17_3
+bbdd$ppal4 <- bbdd$alp17_4
+bbdd$ppal5 <- bbdd$alp17_5
+bbdd$ppal6 <- bbdd$alp17_6
+bbdd$ppal7 <- bbdd$alp17_7
+bbdd$ppal8 <- bbdd$alp17_8
+bbdd$ppal9 <- bbdd$alp17_9
+bbdd$ppal10 <- bbdd$alp17_10
+
+
+Hmisc::label(bbdd$ppal1) <- 'Firmar una petición'
+Hmisc::label(bbdd$ppal2) <- 'Asistir a una marcha'
+Hmisc::label(bbdd$ppal3) <- 'Donar dinero a una actividad politica'
+Hmisc::label(bbdd$ppal4) <- 'Aparecer en los medios'
+Hmisc::label(bbdd$ppal5) <- 'Participar en una huelga'
+Hmisc::label(bbdd$ppal6) <- 'Trabajar en una campaña'
+Hmisc::label(bbdd$ppal7) <- 'Usar redes sociales para expresar opinión política'
+Hmisc::label(bbdd$ppal8) <- 'Convencer a otros'
+Hmisc::label(bbdd$ppal9) <- 'Participar en una toma'
+Hmisc::label(bbdd$ppal10) <- 'Bloqueo de calles'
+
+#Seleccionamos 
+ppal <- subset(bbdd, select = c("ppal1","ppal2","ppal3","ppal4","ppal5","ppal6", "ppal7", "ppal8", "ppal9", "ppal10"))
+ppal <- na.omit(ppal)
+
+#Gráficos
+plot_likert(ppal,
+            axis.titles = "Hijos",
+            geom.colors = "PuBu", # colorbrewer2.org para temas 
+            legend.labels = c("Nunca", "Últimos 3 años", "Últimos 12 meses"),
+            catcount = 3,
+            sort.frq = "neg.asc", # sort descending
+            digits = 0,
+            geom.size = 0.8) 
+```
+
+---
+
+## Tema 5: Participación Política
+
+### Escala disponible en el cuestionario de padres 
+
+```{r, echo=FALSE, fig.align="center",  out.width = "400px", results="asis"}
+rm(a,b,conf, conf2,confpa, confpa2)
+#Codificamos nuevas variables (hijos)
+bbdd$ppap1 <- bbdd$pap13_1
+bbdd$ppap2 <- bbdd$pap13_2
+bbdd$ppap3 <- bbdd$pap13_3
+bbdd$ppap4 <- bbdd$pap13_4
+bbdd$ppap5 <- bbdd$pap13_5
+bbdd$ppap6 <- bbdd$pap13_6
+bbdd$ppap7 <- bbdd$pap13_7
+bbdd$ppap8 <- bbdd$pap13_8
+bbdd$ppap9 <- bbdd$pap13_9
+bbdd$ppap10 <- bbdd$pap13_10
+
+
+Hmisc::label(bbdd$ppap1) <- 'Firmar una petición'
+Hmisc::label(bbdd$ppap2) <- 'Asistir a una marcha'
+Hmisc::label(bbdd$ppap3) <- 'Donar dinero a una actividad politica'
+Hmisc::label(bbdd$ppap4) <- 'Aparecer en los medios'
+Hmisc::label(bbdd$ppap5) <- 'Participar en una huelga'
+Hmisc::label(bbdd$ppap6) <- 'Trabajar en una campaña'
+Hmisc::label(bbdd$ppap7) <- 'Usar redes sociales para expresar opinión política'
+Hmisc::label(bbdd$ppap8) <- 'Convencer a otros'
+Hmisc::label(bbdd$ppap9) <- 'Participar en una toma'
+Hmisc::label(bbdd$ppap10) <- 'Bloqueo de calles'
+
+#Seleccionamos 
+ppap <- subset(bbdd, select = c("ppap1","ppap2","ppap3","ppap4","ppap5","ppap6", "ppap7", "ppap8", "ppap9", "ppap10"))
+ppap <- na.omit(ppap)
+
+#Gráficos
+plot_likert(ppap,
+            axis.titles = "Hijos",
+            geom.colors = "PuBu", # colorbrewer2.org para temas 
+            legend.labels = c("Nunca", "Últimos 3 años", "Últimos 12 meses"),
+            catcount = 3,
+            sort.frq = "neg.asc", # sort descending
+            digits = 0,
+            geom.size = 0.8) 
+```
+
+---
+
+class: inverse, middle, center
+
+## Limitaciones y Cierre
+
+---
+
+
+### 1. No respuesta al instrumento y al ítem. 
+
+Se asume que esta pérdida de información no es aleatoria
+
+**Posibles Soluciones:** Estimadores ponderados en función de la no respuesta. 
+
+### 2. Construir indicadores más precisos para constructos con varios ítems de respuesta. 
+
+Se utilizan solo a modo exploratorio indicadores sumativos. 
+
+**Posibles Soluciones:** Aproximación SEM.
+
+### 3. Generar estimaciones capaces de capturar la naturaleza categórica de los datos. 
+
+**Posibles Soluciones:** Utilización de modelos logísticos ordinales. 
+
+---
+
+class: inverse, middle, center
+
+# ¡Gracias!
+
+[![:scale 10%](figuras/f3.png)](https://github.com/yihui/xaringan)
+
+Presentación generada con [**xaringan**](https://github.com/yihui/xaringan) (R)
+
+<br>
+<div class="centered"> Daniel Miranda, Investigador MIDE UC - COES [damiran1@uc.cl](damiran1@uc.cl) </div>
+<div class="centered"> Juan Carlos Castillo, Universidad de Chile - COES [juancastillov@uchile.cl](juancastillov@uchile.cl) </div>
+<div class="centered"> José Conejeros, PUC - COES [jdconejeros@uc.cl](jdconejeros@uc.cl) </div>
+<br>
