@@ -2,7 +2,7 @@
 
 Estudio ciudadanía según datos de la agencia de la educacion. 
 
-Reporte en HTML con una análisis exploratorio de la base de datos con información de los resultados obtenidos en el estudio de formación ciudadana del años 2017 (Datos levantados por la Agencia de la Calidad de la educación).
+[Reporte en HTML](https://juancarloscastillo.github.io/ciudadania-agencia/Reporte.html) con una análisis exploratorio de la base de datos con información de los resultados obtenidos en el estudio de formación ciudadana del años 2017 (Datos levantados por la Agencia de la Calidad de la educación).
 
 El **objetivo** de este reporte es profundizar en un aspecto central del proyecto Fondecyt: identificar la transmisión intergeneracional de la desigualdad política, orientada a evaluar la coincidencia de las actitudes, conocimiento, creencias y comportamiento para el ejercicio de la ciudadanía entre padres/madres y sus hijos(as). Para esto, el presente reporte considera el análisis de tres instrumentos: 
 
