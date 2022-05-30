@@ -2121,9 +2121,16 @@ data_rbd_final3 &lt;- inner_join(data_rbd_final2, simce2017, by=&quot;rbdi&quot;
 </div>
 <div id="reordenar-y-limpiar-variables-repetidas" class="section level1">
 <h1>Reordenar y limpiar variables repetidas</h1>
-<pre class="r"><code>base_final &lt;- cbind(data_rbd_final3[,1:3], data_rbd_final3[,223:240], data_rbd_final3[,4:222])
-base_final &lt;- base_final %&gt;% select(-rbd) # eliminamos variable rbd no imputada</code></pre>
-<pre class="r"><code>save(base_final, file=&quot;output/base_estudiantes.RData&quot;)</code></pre>
+<pre class="r"><code>base_estudiantes &lt;- cbind(data_rbd_final3[,1:3], data_rbd_final3[,223:240], data_rbd_final3[,4:222])
+base_estudiantes &lt;- base_estudiantes %&gt;% select(-rbd, -serie.y, serie=serie.x, -codigocurso, -gen_alu) # eliminamos variable rbd no imputada, serie duplicada y codigocurso duplicada.
+
+data1 &lt;- base_estudiantes[,1:17]
+data2 &lt;- base_estudiantes[,18:236]
+
+colnames(data2) &lt;- paste(&quot;est&quot;, colnames(data2), sep = &#39;_&#39;) # Prefijo &quot;est&quot; para preguntas cuestionario
+
+base_estudiantes &lt;- cbind(data1, data2)</code></pre>
+<pre class="r"><code>save(base_estudiantes, file=&quot;output/base_estudiantes.RData&quot;)</code></pre>
 </div>
 
 

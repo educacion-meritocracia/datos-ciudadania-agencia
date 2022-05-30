@@ -35,15 +35,6 @@ Se probará el merge con la base de estudiantes.
 ```{r}
 load("output/base_estudiantes.RData")
 
-# Se agrega prefijo "est" a variables del cuestionario de estudiantes
-
-data1 <- base_estudiantes[,1:20]
-data2 <- base_estudiantes[,21:239]
-
-colnames(data2) <- paste("est", colnames(data2), sep = '_')
-
-base_estudiantes <- cbind(data1, data2)
-
 # Se agrega prefijo "apod" a variables del cuestionario de apoderados
 data1 <- apoderados[,1:3]
 data2 <- apoderados[,4:141]
@@ -54,7 +45,8 @@ apoderados <- cbind(data1, data2)
 
 ```{r}
 est_apod <- merge(base_estudiantes, apoderados, by="idalumno")
-est_apod <- est_apod %>% select(-codigoCurso.x, -codigoCurso.y, -serie.y, -serie, serie=serie.x)
+
+est_apod <- est_apod %>% select(-serie.y, serie=serie.x, -codigoCurso.y, codigoCurso=codigoCurso.x) # eliminamos variable serie duplicada y codigocurso duplicada.
 ```
 
 ## Revisar base
