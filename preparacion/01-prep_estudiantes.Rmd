@@ -1,0 +1,244 @@
+---
+title: "preparacion de datos"
+author: "Equipo EDUMER"
+date: '2022-05-26'
+output: html_document
+---
+
+El objetivo de este .rmd es documentar el proceso de preparación de las bases de datos del primer estudio de formación ciudadana de la agencia de calidad de la educación. Se pretende dar cuenta del estado de las bases de datos originales, así como también se busca imputar los RBD de las escuelas a partir de dos bases del MINEDUC.
+
+```{r}
+pacman::p_load(dplyr, haven)
+```
+
+
+# Cargar base de datos original "cuestAlumnos" de la agencia
+
+```{r}
+alumnos <- read.csv("input/cuestAlumnos.csv", sep = "|")
+dim(alumnos)
+```
+
+La base de datos de cuestionario alumnos posee 8589 casos y 222 variables. De estas 222 variables, las variables de identificación son "idalumno", "codigoCurso" y "serie". El resto de las variables son las preguntas del cuestionario.
+
+
+# Cargar base de datos original "alumnosFc_mrun" de la agencia
+
+```{r}
+alumnos_mrun <- read.csv("input/alumnosFc_mrun.csv", sep = "|")
+dim(alumnos_mrun)
+```
+
+La base de datos original de Alumnos_mrun contiene 10.213 casos y 9 variables. Estas variables son las siguientes:
+
+```{r}
+names(alumnos_mrun)
+```
+
+```{r}
+table(duplicated(alumnos_mrun$serie))
+```
+
+Hay dos casos en que se repite el número de serie de la prueba
+
+```{r}
+table(duplicated(alumnos_mrun$mrun))
+alumnos_mrun2 <- alumnos_mrun %>% filter(mrun!=0)
+table(duplicated(alumnos_mrun2$mrun))
+```
+
+Hay 107 casos en que se repite el mrun (run enmascarado) de l-s estudiantes. Al quitar los casos de mrun=0 (sin valor) quedan 98 casos en que se repite esta variable.
+
+
+# merge de ambas bases a partir de la variable "idalumno"
+
+```{r}
+data_alumno <- full_join(alumnos, alumnos_mrun, by="idalumno")
+dim(data_alumno)
+```
+
+# Cargar base de datos mineduc
+
+La base de datos "rendimiento_2017" posee los datos de rendimiento general de cada estudiante inscrito en el sistema educacional (con datos como mrun, RBD, comuna de residencia y promedio general). A partir de esta base se espera obtener los RBD de los estudiantes y la dependencia de cada escuela (haciendo merge por mrun)
+
+```{r}
+data_mineduc <- read.csv("input/Rendimiento_2017_20180131_PUBL.csv", sep = ";")
+names(data_mineduc)
+```
+
+Seleccionar variables de interes en base mineduc
+```{r}
+data_min <- data_mineduc %>% select(agno, rbd, cod_depe2, mrun, gen_alu, cod_com_alu, nom_com_alu, prom_gral)
+dim(data_min)
+```
+
+```{r}
+table(duplicated(data_min$mrun))
+```
+
+La base de datos del Mineduc posee 3.246.824 casos. De este total, 193.355 poseen un mrun duplicado
+
+* Se genera nueva base de datos sin casos duplicados, que posee 3.053.469 casos.
+
+```{r}
+data_min2 <- data_min %>% group_by(mrun) %>% filter(! duplicated(mrun))
+dim(data_min2)
+```
+* Juntar bases por mrun.
+
+```{r}
+data_rbd <- left_join(data_alumno, data_min2, by="mrun")
+dim(data_rbd)
+```
+
+La base mantiene 10.213 casos
+
+# Verificar merge
+
+```{r}
+count(data_alumno, mrbd)
+```
+
+La base de datos original posee 242 "mrbd" distintos. Esto indica 242 escuelas diferentes, por lo que deberían haber 242 RBD distintos en la nueva base
+
+```{r}
+count(data_rbd, rbd)
+```
+
+Hay 496 RBD distintos.
+
+* A continuación se detalla la cantidad de estudiantes (n) que posee cada rbd diferente para cada mrbd
+
+```{r}
+data_rbd %>% group_by(mrbd) %>% count(rbd)
+```
+
+## Tabla resumen de cantidad de rbd distintos por mrbd 
+
+Se construyen variables para diferenciar la cantidad de RBD y la cantidad de estudiantes
+
+```{r}
+dif_rbd <- data_rbd %>% group_by(mrbd) %>% count(rbd) %>% select(mrbd) %>% table() %>% as.data.frame()
+colnames(dif_rbd) <- c("mrbd", "rbd")
+dif_id <- data_rbd %>% group_by(mrbd) %>% count(idalumno) %>% select(mrbd) %>% table() %>% as.data.frame()
+colnames(dif_id) <- c("mrbd", "id")
+
+diferencias_rbd <- merge(dif_rbd, dif_id, by="mrbd") %>% arrange(mrbd)
+```
+
+(columna rbd indica cantidad de rbd's distintos y columna id indica la cantidad de alumnos por escuela)
+
+```{r}
+diferencias_rbd
+```
+
+```{r}
+table(diferencias_rbd$rbd)
+```
+
+Hay 97 escuelas (mrbd) que poseen un solo rbd asignado, hay 65 escuelas que poseen dos rbd diferentes asignados (...) hay 1 escuela que posee 11 rbd diferentes asignados.
+
+## Se corregirán los rbd diferentes (de cada mrbd) según el que posea mayor frecuencia.
+
+Por ejemplo, para el mrbd 937 (3 rbd diferentes) hay un caso que posee rbd 5001, 34 casos con rbd 7341 y 1 caso con rbd NA. Por lo tanto, a los dos casos diferentes se les asignará el rbd 7341
+
+```{r}
+rbd_final <- data_rbd %>% group_by(mrbd, rbd) %>% count() %>% as.data.frame(.)
+
+
+rbd_final <- rbd_final %>% group_by(mrbd) %>% 
+  mutate(max=max(n)) %>% 
+  filter(n==max) %>% 
+  select(-n,-max)
+
+colnames(rbd_final) <- c("mrbd", "rbdi") # al nuevo RBD se le asigna el nombre rbdi por rbd imputado
+
+data_rbd_final <- full_join(data_rbd, rbd_final, by="mrbd")
+```
+
+Esto da como resultado lo siguiente:
+```{r}
+data_rbd_final %>% count(rbdi)
+```
+
+Están las 242 escuelas
+
+```{r}
+sin_respuesta <- filter(data_rbd_final, is.na(codigoCurso))
+sum(is.na(sin_respuesta$idalumno))
+sum(is.na(sin_respuesta$serie.x))
+sum(is.na(sin_respuesta$p1))
+sum(is.na(sin_respuesta$puntaje))
+```
+
+Hay 1624 casos que poseen datos de identificación (id, mrbd, mrun, etc) pero que no poseen respuestas en los cuestionarios (todas las preguntas con NA). Considerar una pequeña diferencia (28 casos) que no poseen respuesta en el cuestionario, pero poseen "puntaje" de la prueba de conocimiento cívico
+
+```{r}
+data_rbd_final2 <- data_rbd_final %>% filter(!is.na(codigoCurso))
+dim(data_rbd_final2)
+```
+
+# Verificar base de nuevo
+
+```{r}
+table(data_rbd_final2$gen_alu)
+data_rbd_final2$gen_alu <- factor(data_rbd_final2$gen_alu, levels = c(1,2), labels = c("M", "F"))
+table(data_rbd_final2$sexo==data_rbd_final2$gen_alu)
+```
+
+Hay 5 casos que poseen sexo distinto entre base de datos de agencia y base del mineduc
+
+```{r}
+data_rbd_final2 %>% group_by(mrbd) %>% count(cod_depe2)
+```
+
+Al hacer la imputación de RBD, no todos los casos poseen el mismo código de dependencia administrativa. Para no volver a imputar variables, se privilegiará utilizar una base a nivel de establecimiento del MINEDUC. Por lo tanto, se elimina la variable "cod_depe2"
+
+```{r}
+data_rbd_final2 <- data_rbd_final2 %>% select(-cod_depe2)
+```
+
+
+# Juntar con dependencia de establecimiento y grupo socioeconomico designado por mineduc
+
+cod_depe1 es la nueva categorizacion del mineduc (5 categorias). cod_depe2 es la categorizacion tradicional en tres categorias. cod_grupo es la caracterización socioeconómica
+
+```{r}
+simce8b2017 <- read_dta("input/simce8b2017_rbd_publica_final.dta")
+simce2017 <- simce8b2017 %>% select(rbdi=rbd, cod_depe1, cod_depe2, cod_grupo)
+
+data_rbd_final3 <- inner_join(data_rbd_final2, simce2017, by="rbdi")
+```
+
+# Verificación final
+
+```{r}
+count(data_rbd_final3, rbdi)
+```
+
+```{r}
+data_rbd_final3 %>% group_by(mrbd) %>% count(cod_depe2)
+```
+
+```{r}
+data_rbd_final3 %>% group_by(rbdi) %>% count(cod_depe2)
+```
+
+```{r}
+data_rbd_final3 %>% group_by(rbdi) %>% count(cod_grupo)
+```
+
+**Todo bien**
+
+# Reordenar y limpiar variables repetidas
+
+```{r}
+base_estudiantes <- cbind(data_rbd_final3[,1:3], data_rbd_final3[,223:240], data_rbd_final3[,4:222])
+base_estudiantes <- base_estudiantes %>% select(-rbd) # eliminamos variable rbd no imputada
+```
+
+```{r}
+save(base_estudiantes, file="output/base_estudiantes.RData")
+```
+
+
