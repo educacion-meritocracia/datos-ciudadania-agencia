@@ -1,0 +1,86 @@
+---
+title: "02-prep_apoderados"
+author: "Equipo EDUMER"
+date: '2022-05-27'
+output: html_document
+---
+
+```{r}
+pacman::p_load(dplyr)
+```
+
+
+# Cargar base de datos original "cuestAlumnos" de la agencia
+
+```{r}
+apoderados <- read.csv("input/cuestPadres.csv", sep = "|")
+dim(apoderados)
+```
+
+
+La base de datos de cuestionario padres posee 6770 casos y 141 variables. De estas 141 variables, las variables de identificación son "idalumno", "codigoCurso" y "serie". El resto de las variables son las preguntas del cuestionario.
+
+```{r}
+table(duplicated(apoderados$serie))
+```
+
+```{r}
+table(duplicated(apoderados$idalumno))
+```
+
+**La base de datos parece estar bien**
+
+Se probará el merge con la base de estudiantes.
+
+```{r}
+load("output/base_estudiantes.RData")
+
+# Se agrega prefijo "est" a variables del cuestionario de estudiantes
+
+data1 <- base_estudiantes[,1:20]
+data2 <- base_estudiantes[,21:239]
+
+colnames(data2) <- paste("est", colnames(data2), sep = '_')
+
+base_estudiantes <- cbind(data1, data2)
+
+# Se agrega prefijo "apod" a variables del cuestionario de apoderados
+data1 <- apoderados[,1:3]
+data2 <- apoderados[,4:141]
+colnames(data2) <- paste("apod", colnames(data2), sep = '_')
+
+apoderados <- cbind(data1, data2)
+```
+
+```{r}
+est_apod <- merge(base_estudiantes, apoderados, by="idalumno")
+est_apod <- est_apod %>% select(-codigoCurso.x, -codigoCurso.y, -serie.y, -serie, serie=serie.x)
+```
+
+## Revisar base
+
+```{r}
+sum(is.na(est_apod$codigoCurso))
+sum(is.na(est_apod$idalumno))
+sum(is.na(est_apod$apod_p1_1))
+```
+
+# Guardar ambas bases (apoderados y estudiantes + apoderados)
+
+```{r}
+base_apoderados <- apoderados
+base_est_apod <- est_apod
+```
+
+
+```{r}
+save(base_apoderados, file="output/base_apoderados.RData")
+save(base_est_apod, file="output/base_est_apod.RData")
+```
+
+
+
+
+
+
+
