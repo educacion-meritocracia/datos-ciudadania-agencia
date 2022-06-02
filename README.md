@@ -6,6 +6,8 @@ La propuesta general de publicación de datos está basada en el Protocolo IPO y
 
 La estructura del repositorio es la siguiente:
 
+```
+
 │   README.md <- Este documento
 │   datos-ciudadania-agencia.Rproj <- Proyecto de R para flujo de trabajo
 │
@@ -38,6 +40,8 @@ La estructura del repositorio es la siguiente:
 |       libro_codigos.xlsx <- Libro de códigos que incluye datos imputados desde otras bases de datos del MINEDUC
 |
 └───reporte-descriptivo <- Reporte descriptivo y análisis de principales resultados del estudio de Formación Ciudadana
+
+```
 
 
 Para más información sobre los distintos componentes que incluye la propuesta de publicación de datos de LISA visitar [este enlace](https://lisa-coes.com/02componentes/)
