@@ -47,7 +47,11 @@ La estructura del repositorio es la siguiente:
 
 ```
 
-
 Para más información sobre los distintos componentes que incluye la propuesta de publicación de datos de LISA visitar [este enlace](https://lisa-coes.com/02componentes/)
 
+* Github Pages de este repositorio: https://educacion-meritocracia.github.io/datos-ciudadania-agencia/
 
+- Documentación de preparación base de datos estudiantes: https://educacion-meritocracia.github.io/datos-ciudadania-agencia/procesamiento/01-prep_estudiantes.html
+- Documentación de preparación base de datos apoderados: https://educacion-meritocracia.github.io/datos-ciudadania-agencia/procesamiento/01-prep_estudiantes.html
+
+* Reporte descriptivo del estudio: https://educacion-meritocracia.github.io/datos-ciudadania-agencia/reporte-descriptivo/Reporte.html
