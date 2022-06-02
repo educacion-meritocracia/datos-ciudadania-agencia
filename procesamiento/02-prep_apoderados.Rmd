@@ -13,7 +13,7 @@ pacman::p_load(dplyr, sjlabelled)
 # Cargar base de datos original "cuestAlumnos" de la agencia
 
 ```{r}
-apoderados <- read.csv("input/cuestPadres.csv", sep = "|")
+apoderados <- read.csv("input/data/cuestPadres.csv", sep = "|")
 dim(apoderados)
 ```
 

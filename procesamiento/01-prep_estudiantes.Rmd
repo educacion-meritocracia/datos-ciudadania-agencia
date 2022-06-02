@@ -15,7 +15,7 @@ pacman::p_load(dplyr, haven, sjlabelled)
 # Cargar base de datos original "cuestAlumnos" de la agencia
 
 ```{r}
-alumnos <- read.csv("input/cuestAlumnos.csv", sep = "|")
+alumnos <- read.csv("input/data/cuestAlumnos.csv", sep = "|")
 dim(alumnos)
 ```
 
@@ -25,7 +25,7 @@ La base de datos de cuestionario alumnos posee 8589 casos y 222 variables. De es
 # Cargar base de datos original "alumnosFc_mrun" de la agencia
 
 ```{r}
-alumnos_mrun <- read.csv("input/alumnosFc_mrun.csv", sep = "|")
+alumnos_mrun <- read.csv("input/data/alumnosFc_mrun.csv", sep = "|")
 dim(alumnos_mrun)
 ```
 
@@ -64,7 +64,7 @@ La base de datos "rendimiento_2017" posee los datos de rendimiento general de ca
 **Esta base no está en el repositorio (por tamaño). Link de descarga: https://datosabiertos.mineduc.cl/wp-content/uploads/2021/12/Rendimiento-2017.rar**
 
 ```{r}
-data_mineduc <- read.csv("input/Rendimiento_2017_20180131_PUBL.csv", sep = ";")
+data_mineduc <- read.csv("input/data/Rendimiento_2017_20180131_PUBL.csv", sep = ";")
 names(data_mineduc)
 ```
 
@@ -206,7 +206,7 @@ data_rbd_final2 <- data_rbd_final2 %>% select(-cod_depe2)
 cod_depe1 es la nueva categorizacion del mineduc (5 categorias). cod_depe2 es la categorizacion tradicional en tres categorias. cod_grupo es la caracterización socioeconómica
 
 ```{r}
-simce8b2017 <- read_dta("input/simce8b2017_rbd_publica_final.dta")
+simce8b2017 <- read_dta("input/data/simce8b2017_rbd_publica_final.dta")
 simce2017 <- simce8b2017 %>% select(rbdi=rbd, cod_depe1, cod_depe2, cod_grupo)
 
 data_rbd_final3 <- inner_join(data_rbd_final2, simce2017, by="rbdi")
