@@ -6,7 +6,7 @@ output: html_document
 ---
 
 ```{r}
-pacman::p_load(dplyr)
+pacman::p_load(dplyr, sjlabelled)
 ```
 
 
@@ -29,34 +29,297 @@ table(duplicated(apoderados$idalumno))
 ```
 
 **La base de datos parece estar bien**
-
-Se probará el merge con la base de estudiantes.
-
 ```{r}
-load("output/base_estudiantes.RData")
-
 # Se agrega prefijo "apod" a variables del cuestionario de apoderados
 data1 <- apoderados[,1:3]
 data2 <- apoderados[,4:141]
 colnames(data2) <- paste("apod", colnames(data2), sep = '_')
 
 apoderados <- cbind(data1, data2)
+rm(data1,data2)
+```
+
+# Etiquetado de variables (algunas)
+
+## Variables sociodemograficas
+
++ **Género**: Se recodifica la variable con valores 0 para hombre (`pap2==1`) y 1 mujer (`pap2==2`). De esta manera, se asume que el respondente es el padre o madre del estudiante. 
+
+```{r}
+#Género Padres
+apoderados$sexo[apoderados$apod_p2==1] <- 0 #Padre (Hombre)
+apoderados$sexo[apoderados$apod_p2==2] <- 1 #Madre (Mujer)
+table(apoderados$sexo)
+
+apoderados$sexo <- sjlabelled::set_label(apoderados$sexo, "sexo del apoderado") ## add label
+```
+
++ **Año de nacimiento del padre/madre (proxy edad)**: Dado que la variable edad del padre/madre no está disponible se procede a utilizar el año de nacimiento como una aproximación de esta dimensión. A partir de inconsistencias observadas en los datos, se procede a dejar como missing 146 observaciones con años de nacimiento inferiores a 1900 y 125 casos con años de nacimiento superiores a los 1995. En esta secuencia se generan tres variables: edad, edad del padre y edad de la madre.
+
+```{r}
+#Corrección años de nacimiento 
+apoderados$apod_p1_2[apoderados$apod_p1_2<1900] <- NA
+apoderados$apod_p1_2[apoderados$apod_p1_2>1995] <- NA
+#Edad General (ambos padres)
+apoderados$edad <- 2017 - apoderados$apod_p1_2
+#Edad del Padre 
+apoderados$edad_pa <- ifelse(apoderados$sexo==0, (2017 - apoderados$apod_p1_2), NA)
+#Edad de la Madre 
+apoderados$edad_ma <- ifelse(apoderados$sexo==1, (2017 - apoderados$apod_p1_2), NA)
+
+apoderados$edad <- sjlabelled::set_label(apoderados$edad, "sexo del apoderado") ## add label
+apoderados$edad_pa <- sjlabelled::set_label(apoderados$edad_pa, "sexo del padre") ## add label
+apoderados$edad_ma <- sjlabelled::set_label(apoderados$edad_ma, "sexo de la madre") ## add label
+```
+
++ **Educación del padre/madre**: esta variable se construyó a partir de la información disponible en 10 variables que identifican los niveles educacionales. En otras palabras, cada una de estas variables corresponde a un nivel educacional con código 1 si es que corresponde al nivel educacional del respondente y código 2 si corresponde al nivel educacional del cónyuge. 
+
+A partir de esta información se construye una nueva variable que identifica el nivel educativo del respondente y el cónyuge, en función al número de columna que tiene valor 1 y 2. Posterior a eso, se procede a identificar si corresponde al nivel educativo del padre o la madre cruzando con la variable género (se asume por defecto que el respondente es el padre/madre del alumno). Las categorías duplicadas, vale decir más de una columna con valor 1 o 2,fueron consideradas como casos pérdidos dentro de la muestra. 
+
+Finalmente, se asume esta variable como continua de 10 niveles producto de la falta de información disponible para imputar una etiqueta. En el SIMCE, por ejemplo, se utiliza una variable de 21 categorías, lo cual no permite realizar una imputación fundamentada de categorías educacionales.
+
+```{r}
+#Parte 1 codificación del nivel educativo del repondente (1) y su cónyuge/pareja (2).
+#Nivel educacional del respondente (1)
+#Identificamos el nivel educativo (columna con valor 1)
+num1 <- apply(apoderados[12:21], 1, function(row) which(row == 1))
+apoderados$educ1 <- sapply(num1, function(x){as.numeric(x[1])})
+#Observamos que hay columnas duplicadas (valor 1 para dos columnas distintas)
+num1_rep <- apply(apoderados[12:21], 1, function(row) which(row == 1))
+apoderados$educ1_rep <- sapply(num1_rep, function(x){as.numeric(x[2])})
+#Eliminamos estos duplicados
+apoderados$educ1[apoderados$educ1_rep!=is.na(apoderados$educ1_rep)] <- NA
+
+#Nivel educacional del cónyuge/pareja (2)
+#Identificamos el nivel educativo (columna con valor 2)
+num2 <- apply(apoderados[12:21], 1, function(row) which(row == 2))
+apoderados$educ2 <- sapply(num2, function(x){as.numeric(x[1])})
+#Observamos que hay columnas duplicadas (valor 2 para dos columnas distintas)
+num2_rep <- apply(apoderados[12:21], 1, function(row) which(row == 2))
+apoderados$educ2_rep <- sapply(num2_rep, function(x){as.numeric(x[2])})
+#Eliminamos estos duplicados
+apoderados$educ2[apoderados$educ2_rep!=is.na(apoderados$educ2_rep)] <- NA
+
+#Removemos variables y objetos auxiliares
+rm(num1, num1_rep, num2, num2_rep)
+apoderados$educ1_rep <- NULL
+apoderados$educ2_rep <- NULL
+
+#En función al género del respondente generamos las variables que identifican el nivel educacional alcanzado por el padre y la madre: 
+
+#Educación del padre
+apoderados$educpadre <-ifelse(apoderados$sexo==0, apoderados$educ1, NA)
+apoderados$educpadre <-ifelse(is.na(apoderados$educpadre), apoderados$educ2, apoderados$educpadre)
+
+#Educación de la madre
+apoderados$educmadre <-ifelse(apoderados$sexo==1, apoderados$educ1, NA)
+apoderados$educmadre <-ifelse(is.na(apoderados$educmadre), apoderados$educ2, apoderados$educmadre)
+
+# Educacion mas alta entre padre y madre
+
+apoderados$educ_max <- ifelse(is.na(apoderados$educ1), apoderados$educ2,
+                              ifelse(is.na(apoderados$educ2), apoderados$educ1, 
+                                     ifelse(apoderados$educ1>apoderados$educ2, apoderados$educ1,
+                                            ifelse(apoderados$educ1<apoderados$educ2, apoderados$educ2, NA))))
+
+apoderados$educ1 <- sjlabelled::set_label(apoderados$educ1, "Nivel educacional respondente") ## add label
+apoderados$educ2 <- sjlabelled::set_label(apoderados$educ2, "Nivel educacional conyuge") ## add label
+apoderados$educpadre <- sjlabelled::set_label(apoderados$educpadre, "Nivel educacional padre") ## add label
+apoderados$educmadre <- sjlabelled::set_label(apoderados$educmadre, "Nivel educacional madre") ## add label
+apoderados$educ_max <- sjlabelled::set_label(apoderados$educ_max, "Nivel educacional mas alto en la familia") ## add label
+```
+
+Dicho esto, se propone la siguiente asignación de categorías para los atributos de respuesta: 
+
+    Valor 1: "Sin estudios"
+    Valor 2: "Educación Básica o Preparatoria incompleta" 
+    Valor 3: "Educación Básica o Preparatoria completa"
+    Valor 4: "Educación Media o Humanidades incompleta"
+    Valor 5: "Educación Media o Humanidades completa"
+    Valor 6: "Técnico Superior incompleta"
+    Valor 7: "Técnico Superior completa"
+    Valor 8: "Universitaria incompleta"
+    Valor 9: "Universitaria completa"
+    Valor 10: "Estudios de posgrado (magíster o doctorado)"
+    
+```{r}
+apoderados$educ_max <-factor(apoderados$educ_max, levels = c(1,2,3,4,5,6,7,8,9,10), labels = c("Sin estudios", "Educacion basica incompleta", "Educacion basica completa", "Educacion media incompleta", "Educacion media completa", "Tecnico superior incompleta", "Tecnico superior completa", "Universitaria incompleta", "Universitaria completa", "Estudios de posgrado (magister o doctorado)"))
+```
+
++ **Libros en el hogar**: variable categórica que identifica la cantidad de libros en el hogar según el informante a cargo del estudiante (padre/madre).
+
+```{r}
+apoderados$apod_p11 <-factor(apoderados$apod_p11, levels = c(1,2,3,4,5), labels = c("0 a 10", "11 a 25", "26 a 100", "101 a 200", "200 o más"))
+apoderados$apod_p11 <- sjlabelled::set_label(apoderados$apod_p11, "Cantidad de libros en el hogar") ## add label
+```
+
+## Interés Político
+
+    ¿Cuánto te interesas por temas políticas y sociales?
+    
+    1. Nada
+    2. Poco
+    3. Bastante
+    4. Mucho
+    
+```{r}
+apoderados$apod_p17 <-factor(apoderados$apod_p17, levels = c(1,2,3,4), labels = c("Nada", "Poco", "Bastante", "Mucho"))
+apoderados$apod_p17 <- sjlabelled::set_label(apoderados$apod_p17, 'Interes politico')
+```
+
+## Ideas autoritarias 
+
+Para esta sección se realizó una selección de 4 variables
+
+      Las dictaduras se justifican cuando traen beneficios económicos	
+      La concentración del poder en una sola persona garantiza el orden y la seguridad
+      El gobierno debería cerrar los medios de comunicación que lo critiquen	
+      Si el presidente no está de acuerdo con el Congreso debería disolverlo
+      
+      1. Muy en desacuerdo
+      2. En desacuerdo
+      3. De acuerdo
+      4. Muy de acuerdo
+      
+
+```{r}
+apoderados$apod_p19_4 <-factor(apoderados$apod_p19_4, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
+apoderados$apod_p19_5 <-factor(apoderados$apod_p19_5, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
+apoderados$apod_p19_6 <-factor(apoderados$apod_p19_6, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
+apoderados$apod_p19_7 <-factor(apoderados$apod_p19_7, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
+
+apoderados$apod_p19_4 <- sjlabelled::set_label(apoderados$apod_p19_4, 'Se justifican las dictaduras por beneficios economicos')
+apoderados$apod_p19_5 <- sjlabelled::set_label(apoderados$apod_p19_5, 'La concentracion del poder solo en uno garantiza el orden y la seguridad')
+apoderados$apod_p19_6 <- sjlabelled::set_label(apoderados$apod_p19_6, 'El gobierno deberia cerrar los medios de comunicacion que lo critiquen')
+apoderados$apod_p19_7 <- sjlabelled::set_label(apoderados$apod_p19_7, 'Si el presidente no esta de acuerdo con el congreso, deberia disolverlo')
+```
+
+## Valoración de la democracia 
+
+      Las democracias son la mejor forma de gobierno porque aseguran la participación
+      El gobierno debe garantizar la libertad de expresión de las personas
+      Los gobiernos democráticos fomentan una mayor igualdad entre las personas
+      
+      1. Muy en desacuerdo
+      2. En desacuerdo
+      3. De acuerdo
+      4. Muy de acuerdo
+      
+
+```{r}
+apoderados$apod_p19_1 <-factor(apoderados$apod_p19_1, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
+apoderados$apod_p19_2 <-factor(apoderados$apod_p19_2, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
+apoderados$apod_p19_3 <-factor(apoderados$apod_p19_3, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
+
+apoderados$apod_p19_1 <- sjlabelled::set_label(apoderados$apod_p19_1, 'Las democracias son la mejor forma porque aseguran la participacion')
+apoderados$apod_p19_2 <- sjlabelled::set_label(apoderados$apod_p19_2, 'El gobierno debe garantizar la libertad de expresion')
+apoderados$apod_p19_3 <- sjlabelled::set_label(apoderados$apod_p19_3, 'Los gobiernos democraticos fomentan una mayor igualdad')
+```
+
+## Confianza en las instituciones 
+
+      El congreso Nacional
+      Los Tribunales de Justicia
+      El Gobierno
+      Los partidos políticos
+      Los bancos
+      Las empresas privadas
+      Los carabineros
+      Las Fuerzas Armadas
+      Los sindicatos	
+      Las radios
+      La televisión
+      Los diarios
+      Las redes sociales (por ejemplo Twitter, Youtube)
+      
+      1. Nada o muy poco
+      2. Algo
+      3. Bastante
+      4. Mucho
+
+
+```{r}
+apoderados$apod_p21_1 <-factor(apoderados$apod_p21_1, levels = c(1,2,3,4), labels = c("Nada", "Algo", "Bastante", "Mucho"))
+apoderados$apod_p21_2 <-factor(apoderados$apod_p21_2, levels = c(1,2,3,4), labels = c("Nada", "Algo", "Bastante", "Mucho"))
+apoderados$apod_p21_3 <-factor(apoderados$apod_p21_3, levels = c(1,2,3,4), labels = c("Nada", "Algo", "Bastante", "Mucho"))
+apoderados$apod_p21_4 <-factor(apoderados$apod_p21_4, levels = c(1,2,3,4), labels = c("Nada", "Algo", "Bastante", "Mucho"))
+apoderados$apod_p21_5 <-factor(apoderados$apod_p21_5, levels = c(1,2,3,4), labels = c("Nada", "Algo", "Bastante", "Mucho"))
+apoderados$apod_p21_6 <-factor(apoderados$apod_p21_6, levels = c(1,2,3,4), labels = c("Nada", "Algo", "Bastante", "Mucho"))
+apoderados$apod_p21_7 <-factor(apoderados$apod_p21_7, levels = c(1,2,3,4), labels = c("Nada", "Algo", "Bastante", "Mucho"))
+apoderados$apod_p21_8 <-factor(apoderados$apod_p21_8, levels = c(1,2,3,4), labels = c("Nada", "Algo", "Bastante", "Mucho"))
+apoderados$apod_p21_9 <-factor(apoderados$apod_p21_9, levels = c(1,2,3,4), labels = c("Nada", "Algo", "Bastante", "Mucho"))
+apoderados$apod_p21_10 <-factor(apoderados$apod_p21_10, levels = c(1,2,3,4), labels = c("Nada", "Algo", "Bastante", "Mucho"))
+apoderados$apod_p21_11 <-factor(apoderados$apod_p21_11, levels = c(1,2,3,4), labels = c("Nada", "Algo", "Bastante", "Mucho"))
+apoderados$apod_p21_12 <-factor(apoderados$apod_p21_12, levels = c(1,2,3,4), labels = c("Nada", "Algo", "Bastante", "Mucho"))
+apoderados$apod_p21_13 <-factor(apoderados$apod_p21_13, levels = c(1,2,3,4), labels = c("Nada", "Algo", "Bastante", "Mucho"))
+
+apoderados$apod_p21_1 <- sjlabelled::set_label(apoderados$apod_p21_1, 'Confianza: Congreso nacional')
+apoderados$apod_p21_2 <- sjlabelled::set_label(apoderados$apod_p21_2, 'Confianza: Tribunales de justicia')
+apoderados$apod_p21_3 <- sjlabelled::set_label(apoderados$apod_p21_3, 'Confianza: El Gobierno')
+apoderados$apod_p21_4 <- sjlabelled::set_label(apoderados$apod_p21_4, 'Confianza: Partidos Politicos')
+apoderados$apod_p21_5 <- sjlabelled::set_label(apoderados$apod_p21_5, 'Confianza: Bancos')
+apoderados$apod_p21_6 <- sjlabelled::set_label(apoderados$apod_p21_6, 'Confianza: Empresas privadas')
+apoderados$apod_p21_7 <- sjlabelled::set_label(apoderados$apod_p21_7, 'Confianza: Carabineros')
+apoderados$apod_p21_8 <- sjlabelled::set_label(apoderados$apod_p21_8, 'Confianza: Fuerzas armadas')
+apoderados$apod_p21_9 <- sjlabelled::set_label(apoderados$apod_p21_9, 'Confianza: Sindicatos')
+apoderados$apod_p21_10 <- sjlabelled::set_label(apoderados$apod_p21_10, 'Confianza: Radios')
+apoderados$apod_p21_11 <- sjlabelled::set_label(apoderados$apod_p21_11, 'Confianza: Television')
+apoderados$apod_p21_12 <- sjlabelled::set_label(apoderados$apod_p21_12, 'Confianza: Diarios')
+apoderados$apod_p21_13 <- sjlabelled::set_label(apoderados$apod_p21_13, 'Confianza: Redes sociales')
+```
+
+## Preguntas sobre meritocracia
+
+```{r}
+# categorias de respuesta
+apoderados$apod_p25_1 <-factor(apoderados$apod_p25_1, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
+apoderados$apod_p25_2 <-factor(apoderados$apod_p25_2, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
+apoderados$apod_p25_3 <-factor(apoderados$apod_p25_3, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
+apoderados$apod_p25_4 <-factor(apoderados$apod_p25_4, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
+apoderados$apod_p25_5 <-factor(apoderados$apod_p25_5, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
+apoderados$apod_p26_1 <-factor(apoderados$apod_p26_1, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
+apoderados$apod_p26_2 <-factor(apoderados$apod_p26_2, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
+apoderados$apod_p26_3 <-factor(apoderados$apod_p26_3, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
+apoderados$apod_p26_4 <-factor(apoderados$apod_p26_4, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
 ```
 
 ```{r}
-est_apod <- merge(base_estudiantes, apoderados, by="idalumno")
+apoderados$apod_p25_1 <- sjlabelled::set_label(apoderados$apod_p25_1, "En Chile, las personas tienen igualdad de oportunidades para salir adelante")
+apoderados$apod_p25_2 <- sjlabelled::set_label(apoderados$apod_p25_2, "En Chile, las personas son recompensadas por sus esfuerzos")
+apoderados$apod_p25_3 <- sjlabelled::set_label(apoderados$apod_p25_3, "En Chile, las personas obtienen lo que merecen")
+apoderados$apod_p25_4 <- sjlabelled::set_label(apoderados$apod_p25_4, "En Chile, las personas son recompensadas por su inteligencia y habilidad")
+apoderados$apod_p25_5 <- sjlabelled::set_label(apoderados$apod_p25_5, "En Chile, las diferencias de ingreso son demasiado grandes")
+apoderados$apod_p26_1 <- sjlabelled::set_label(apoderados$apod_p26_1, "Es justo que en Chile las personas con mayores ingresos puedan tener mejores pensiones que las personas de ingresos más bajos")
+apoderados$apod_p26_2 <- sjlabelled::set_label(apoderados$apod_p26_2, "Es justo que en Chile las personas que puedan pagar tengan una mejor educación para sus hijos")
+apoderados$apod_p26_3 <- sjlabelled::set_label(apoderados$apod_p26_3, "Es justo que en Chile las personas con mayores ingresos puedan acceder a una mejor atención de salud que las personas con ingresos más bajos")
+apoderados$apod_p26_4 <- sjlabelled::set_label(apoderados$apod_p26_4, "El Gobierno de Chile debería hacer algo para reducir las diferencias de ingreso entre ricos y pobres")
+```
 
-est_apod <- est_apod %>% select(-serie.y, serie=serie.x, -codigoCurso.y, codigoCurso=codigoCurso.x) # eliminamos variable serie duplicada y codigocurso duplicada.
+# Se probará el merge con la base de estudiantes.
+
+```{r}
+load("output/base_estudiantes.RData")
+
+est_apod <- merge(base_estudiantes, apoderados, by="idalumno", suffixes = c(".est", ".apod"))
+
+est_apod <- est_apod %>% select(-serie.apod, serie=serie.est, -codigoCurso.apod, codigoCurso=codigoCurso.est) # eliminamos variable serie duplicada y codigocurso duplicada.
+
+dim(est_apod)
 ```
 
 ## Revisar base
+
+La base de estudiantes + apoderados tiene 6511 casos. Hay 259 casos de apoderados que son apoderados sin estudiantes
+
+```{r}
+table(apoderados$idalumno %in% base_estudiantes$idalumno)
+```
 
 ```{r}
 sum(is.na(est_apod$codigoCurso))
 sum(is.na(est_apod$idalumno))
 sum(is.na(est_apod$apod_p1_1))
 ```
-
 # Guardar ambas bases (apoderados y estudiantes + apoderados)
 
 ```{r}
@@ -69,10 +332,3 @@ base_est_apod <- est_apod
 save(base_apoderados, file="output/base_apoderados.RData")
 save(base_est_apod, file="output/base_est_apod.RData")
 ```
-
-
-
-
-
-
-

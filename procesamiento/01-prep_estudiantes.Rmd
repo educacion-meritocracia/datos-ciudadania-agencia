@@ -8,7 +8,7 @@ output: html_document
 El objetivo de este .rmd es documentar el proceso de preparación de las bases de datos del primer estudio de formación ciudadana de la agencia de calidad de la educación. Se pretende dar cuenta del estado de las bases de datos originales, así como también se busca imputar los RBD de las escuelas a partir de dos bases del MINEDUC.
 
 ```{r}
-pacman::p_load(dplyr, haven)
+pacman::p_load(dplyr, haven, sjlabelled)
 ```
 
 
@@ -245,6 +245,238 @@ colnames(data2) <- paste("est", colnames(data2), sep = '_') # Prefijo "est" para
 
 base_estudiantes <- cbind(data1, data2)
 ```
+
+# Etiquetado de variables (algunas)
+
+## Variables sociodemograficas
+
+* Sexo 
+
+```{r}
+base_estudiantes$sexo <- sjlabelled::set_label(base_estudiantes$sexo, "sexo del estudiante") ## add label
+```
+
+* Cantidad de libros en el hogar según estudiante
+
+```{r}
+base_estudiantes$est_p3 <-factor(base_estudiantes$est_p3, levels = c(1,2,3,4,5), labels = c("0 a 11", "10 a 25", "26 a 100", "101 a 200", "200 o más")) # Categorizar respuestas
+base_estudiantes$est_p3 <- sjlabelled::set_label(base_estudiantes$est_p3, "Cantidad de libros en el hogar") ## add label
+sum(is.na(base_estudiantes$est_p3)) ## quedan 109 NA que eran respuestas 0 (vacio) y 99 (doble marca)
+```
+
+## Variables escuela
+
+* **Clima escolar**
+
+
+      clima 1: La mayoría de mis profesores me tratan de manera justa
+      clima 2: Los estudiantes se llevan bien con la mayoría de los profesores
+      clima 3: A la mayoría de los profesores les interesa el bienestar de los estudiantes
+      clima 4: La mayoría de mis profesores realmente escuchan lo que tengo que decir
+      clima 5: Si necesito ayuda extra, mis profesores me la darán
+      clima 6: La mayoría de los profesores detendrían el bullying a los estudiantes
+      clima 7: La mayoría de los estudiantes de mi escuela se trata con respeto
+      clima 8: La mayoría de los estudiantes de mi escuela se lleva bien entre ellos
+      clima 9: Mi escuela es un lugar en que los estudiantes se sienten seguros
+      clima 10: Tengo miedo de ser víctima de bullying por parte de otros estudiantes
+
+```{r}
+base_estudiantes$est_p5_1 <- sjlabelled::set_label(base_estudiantes$est_p5_1, 'Trato justo')
+base_estudiantes$est_p5_2 <- sjlabelled::set_label(base_estudiantes$est_p5_2, 'Buena relación estudiante/profesor')
+base_estudiantes$est_p5_3 <- sjlabelled::set_label(base_estudiantes$est_p5_3, 'Interes por bienestar estudiante')
+base_estudiantes$est_p5_4 <- sjlabelled::set_label(base_estudiantes$est_p5_4, 'Sentirse escuchado')
+base_estudiantes$est_p5_5 <- sjlabelled::set_label(base_estudiantes$est_p5_5, 'Ayuda extra')
+base_estudiantes$est_p5_6 <- sjlabelled::set_label(base_estudiantes$est_p5_6, 'Detener el bullying')
+base_estudiantes$est_p5_7 <- sjlabelled::set_label(base_estudiantes$est_p5_7, 'Trato respetuoso entre estudiantes')
+base_estudiantes$est_p5_8 <- sjlabelled::set_label(base_estudiantes$est_p5_8, 'Buena relación entre estudiantes')
+base_estudiantes$est_p5_9 <- sjlabelled::set_label(base_estudiantes$est_p5_9, 'Sentirse seguro')
+base_estudiantes$est_p5_10 <- sjlabelled::set_label(base_estudiantes$est_p5_10, 'Miedo bullying')
+```
+
+* **Espacios de discusión**: esta dimensión refiere especificamente a un clima escolar favorable a espacios de discusión particular
+
+
+      Discusión 1: Los profesores estimulan a los estudiantes a formar sus propias opiniones
+      Discusión 2: Los profesores estimulan a los estudiantes a expresar sus opiniones
+      Discusión 3: Los estudiantes plantean hechos políticos de actualidad para ser discutidos en clases
+      Discusión 4: Los estudiantes expresan sus opiniones en clases, aun cuando sean distintas a las de los demás
+      Discusión 5: Los profesores estimulan a los estudiantes a conversar los temas con gente que opina distinto
+      Discusión 6: Los profesores exponen los temas desde los distintos enfoques al explicarlos en clases
+
+```{r}
+base_estudiantes$est_p15_1 <- sjlabelled::set_label(base_estudiantes$est_p15_1, 'Estimulo a formar opiniones propias (profesores)')
+base_estudiantes$est_p15_2 <- sjlabelled::set_label(base_estudiantes$est_p15_2, 'Estimulo a expresar opiniones (profesores)')
+base_estudiantes$est_p15_3 <- sjlabelled::set_label(base_estudiantes$est_p15_3, 'Proponer hechos políticos a discutir (estudiantes)')
+base_estudiantes$est_p15_4 <- sjlabelled::set_label(base_estudiantes$est_p15_4, 'Expresar opiniones distintas al resto (estudiantes)')
+base_estudiantes$est_p15_5 <- sjlabelled::set_label(base_estudiantes$est_p15_5, 'Estimulo a discutir con otros (profesores)')
+base_estudiantes$est_p15_6 <- sjlabelled::set_label(base_estudiantes$est_p15_6, 'Temas desde distintos enfoques (profesores)')
+```
+
+
+## Interés Político
+
+    ¿Cuánto te interesas por temas políticas y sociales?
+    
+    1. Nada
+    2. Poco
+    3. Bastante
+    4. Mucho
+    
+```{r}
+base_estudiantes$est_p16 <-factor(base_estudiantes$est_p16, levels = c(1,2,3,4), labels = c("Nada", "Poco", "Bastante", "Mucho"))
+base_estudiantes$est_p16 <- sjlabelled::set_label(base_estudiantes$est_p16, 'Interes politico')
+```
+
+## Ideas autoritarias 
+
+Para esta sección se realizó una selección de 4 variables
+
+      Las dictaduras se justifican cuando traen beneficios económicos	
+      La concentración del poder en una sola persona garantiza el orden y la seguridad
+      El gobierno debería cerrar los medios de comunicación que lo critiquen	
+      Si el presidente no está de acuerdo con el Congreso debería disolverlo
+      
+      1. Muy en desacuerdo
+      2. En desacuerdo
+      3. De acuerdo
+      4. Muy de acuerdo
+      
+
+```{r}
+base_estudiantes$est_p28_2 <-factor(base_estudiantes$est_p28_2, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
+base_estudiantes$est_p28_4 <-factor(base_estudiantes$est_p28_4, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
+base_estudiantes$est_p28_6 <-factor(base_estudiantes$est_p28_6, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
+base_estudiantes$est_p28_7 <-factor(base_estudiantes$est_p28_7, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
+
+base_estudiantes$est_p28_2 <- sjlabelled::set_label(base_estudiantes$est_p28_2, 'Se justifican las dictaduras por beneficios economicos')
+base_estudiantes$est_p28_4 <- sjlabelled::set_label(base_estudiantes$est_p28_4, 'La concentracion del poder solo en uno garantiza el orden y la seguridad')
+base_estudiantes$est_p28_6 <- sjlabelled::set_label(base_estudiantes$est_p28_6, 'El gobierno deberia cerrar los medios de comunicacion que lo critiquen')
+base_estudiantes$est_p28_7 <- sjlabelled::set_label(base_estudiantes$est_p28_7, 'Si el presidente no esta de acuerdo con el congreso, deberia disolverlo')
+```
+
+## Valoración de la democracia 
+
+      Las democracias son la mejor forma de gobierno porque aseguran la participación
+      El gobierno debe garantizar la libertad de expresión de las personas
+      Los gobiernos democráticos fomentan una mayor igualdad entre las personas
+      
+      1. Muy en desacuerdo
+      2. En desacuerdo
+      3. De acuerdo
+      4. Muy de acuerdo
+      
+
+```{r}
+base_estudiantes$est_p28_1 <-factor(base_estudiantes$est_p28_1, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
+base_estudiantes$est_p28_3 <-factor(base_estudiantes$est_p28_3, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
+base_estudiantes$est_p28_5 <-factor(base_estudiantes$est_p28_5, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
+
+base_estudiantes$est_p28_1 <- sjlabelled::set_label(base_estudiantes$est_p28_1, 'Las democracias son la mejor forma porque aseguran la participacion')
+base_estudiantes$est_p28_3 <- sjlabelled::set_label(base_estudiantes$est_p28_3, 'El gobierno debe garantizar la libertad de expresion')
+base_estudiantes$est_p28_5 <- sjlabelled::set_label(base_estudiantes$est_p28_5, 'Los gobiernos democraticos fomentan una mayor igualdad')
+```
+
+
+## Confianza en las instituciones 
+
+      El congreso Nacional
+      Los Tribunales de Justicia
+      El Gobierno
+      Los partidos políticos
+      Los bancos
+      Las empresas privadas
+      Los carabineros
+      Las Fuerzas Armadas
+      Los sindicatos	
+      Las radios
+      La televisión
+      Los diarios
+      Las redes sociales (por ejemplo Twitter, Youtube)
+      
+      1. Nada o muy poco
+      2. Algo
+      3. Bastante
+      4. Mucho
+
+
+```{r}
+base_estudiantes$est_p27_1 <-factor(base_estudiantes$est_p27_1, levels = c(1,2,3,4), labels = c("Nada", "Algo", "Bastante", "Mucho"))
+base_estudiantes$est_p27_2 <-factor(base_estudiantes$est_p27_2, levels = c(1,2,3,4), labels = c("Nada", "Algo", "Bastante", "Mucho"))
+base_estudiantes$est_p27_3 <-factor(base_estudiantes$est_p27_3, levels = c(1,2,3,4), labels = c("Nada", "Algo", "Bastante", "Mucho"))
+base_estudiantes$est_p27_4 <-factor(base_estudiantes$est_p27_4, levels = c(1,2,3,4), labels = c("Nada", "Algo", "Bastante", "Mucho"))
+base_estudiantes$est_p27_5 <-factor(base_estudiantes$est_p27_5, levels = c(1,2,3,4), labels = c("Nada", "Algo", "Bastante", "Mucho"))
+base_estudiantes$est_p27_6 <-factor(base_estudiantes$est_p27_6, levels = c(1,2,3,4), labels = c("Nada", "Algo", "Bastante", "Mucho"))
+base_estudiantes$est_p27_7 <-factor(base_estudiantes$est_p27_7, levels = c(1,2,3,4), labels = c("Nada", "Algo", "Bastante", "Mucho"))
+base_estudiantes$est_p27_8 <-factor(base_estudiantes$est_p27_8, levels = c(1,2,3,4), labels = c("Nada", "Algo", "Bastante", "Mucho"))
+base_estudiantes$est_p27_9 <-factor(base_estudiantes$est_p27_9, levels = c(1,2,3,4), labels = c("Nada", "Algo", "Bastante", "Mucho"))
+base_estudiantes$est_p27_10 <-factor(base_estudiantes$est_p27_10, levels = c(1,2,3,4), labels = c("Nada", "Algo", "Bastante", "Mucho"))
+base_estudiantes$est_p27_11 <-factor(base_estudiantes$est_p27_11, levels = c(1,2,3,4), labels = c("Nada", "Algo", "Bastante", "Mucho"))
+base_estudiantes$est_p27_12 <-factor(base_estudiantes$est_p27_12, levels = c(1,2,3,4), labels = c("Nada", "Algo", "Bastante", "Mucho"))
+base_estudiantes$est_p27_13 <-factor(base_estudiantes$est_p27_13, levels = c(1,2,3,4), labels = c("Nada", "Algo", "Bastante", "Mucho"))
+
+base_estudiantes$est_p27_1 <- sjlabelled::set_label(base_estudiantes$est_p27_1, 'Confianza: Congreso nacional')
+base_estudiantes$est_p27_2 <- sjlabelled::set_label(base_estudiantes$est_p27_2, 'Confianza: Tribunales de justicia')
+base_estudiantes$est_p27_3 <- sjlabelled::set_label(base_estudiantes$est_p27_3, 'Confianza: El Gobierno')
+base_estudiantes$est_p27_4 <- sjlabelled::set_label(base_estudiantes$est_p27_4, 'Confianza: Partidos Politicos')
+base_estudiantes$est_p27_5 <- sjlabelled::set_label(base_estudiantes$est_p27_5, 'Confianza: Bancos')
+base_estudiantes$est_p27_6 <- sjlabelled::set_label(base_estudiantes$est_p27_6, 'Confianza: Empresas privadas')
+base_estudiantes$est_p27_7 <- sjlabelled::set_label(base_estudiantes$est_p27_7, 'Confianza: Carabineros')
+base_estudiantes$est_p27_8 <- sjlabelled::set_label(base_estudiantes$est_p27_8, 'Confianza: Fuerzas armadas')
+base_estudiantes$est_p27_9 <- sjlabelled::set_label(base_estudiantes$est_p27_9, 'Confianza: Sindicatos')
+base_estudiantes$est_p27_10 <- sjlabelled::set_label(base_estudiantes$est_p27_10, 'Confianza: Radios')
+base_estudiantes$est_p27_11 <- sjlabelled::set_label(base_estudiantes$est_p27_11, 'Confianza: Television')
+base_estudiantes$est_p27_12 <- sjlabelled::set_label(base_estudiantes$est_p27_12, 'Confianza: Diarios')
+base_estudiantes$est_p27_13 <- sjlabelled::set_label(base_estudiantes$est_p27_13, 'Confianza: Redes sociales')
+```
+
+## Preguntas sobre meritocracia
+
+```{r}
+# categorias de respuesta
+base_estudiantes$est_P7=factor(base_estudiantes$est_P7, levels = c(1,2), labels=c("Inteligencia", "Esfuerzo"))
+base_estudiantes$est_p8=factor(base_estudiantes$est_p8, levels = c(1,2), labels=c("El nivel de esfuerzo puede cambiar", "El nivel de esfuerzo no puede cambiar"))
+base_estudiantes$est_p9=factor(base_estudiantes$est_p9, levels = c(1,2,3), labels=c("Te esfuerzas menos que la mayoria de tus compañeros", "Te esfuerzas igual que la mayoria de tus compañeros", "Te esfuerzas mas que la mayoria de tus compañeros"))
+base_estudiantes$est_p10=factor(base_estudiantes$est_p10, levels = c(1,2), labels=c("La mayoria se esfuerza", "Solo unos pocos son esforzados"))
+base_estudiantes$est_p11=factor(base_estudiantes$est_p11, levels = c(1,2), labels=c("El nivel de habilidad puede cambiar", "El nivel de habilidad no puede cambiar"))
+base_estudiantes$est_p12=factor(base_estudiantes$est_p12, levels = c(1,2,3), labels=c("Eres menos habil que la mayoria de tus compañeros", "Eres igual de habil que la mayoria de tus compañeros", "Eres mas habil que la mayoria de tus compañeros"))
+base_estudiantes$est_p13=factor(base_estudiantes$est_p13, levels = c(1,2), labels=c("La mayoria son naturalmente habiles", "Solo unos pocos son naturalmente habiles"))
+
+
+base_estudiantes$est_p38_1 <-factor(base_estudiantes$est_p38_1, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
+base_estudiantes$est_p38_2 <-factor(base_estudiantes$est_p38_2, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
+base_estudiantes$est_p38_3 <-factor(base_estudiantes$est_p38_3, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
+base_estudiantes$est_p38_4 <-factor(base_estudiantes$est_p38_4, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
+base_estudiantes$est_p38_5 <-factor(base_estudiantes$est_p38_5, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
+base_estudiantes$est_p39_1 <-factor(base_estudiantes$est_p39_1, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
+base_estudiantes$est_p39_2 <-factor(base_estudiantes$est_p39_2, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
+base_estudiantes$est_p39_3 <-factor(base_estudiantes$est_p39_3, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
+base_estudiantes$est_p39_4 <-factor(base_estudiantes$est_p39_4, levels = c(1,2,3,4), labels = c("Muy desacuerdo", "Desacuerdo", "De acuerdo", "Muy de acuerdo"))
+```
+
+
+```{r}
+base_estudiantes$est_p6_1 <- sjlabelled::set_label(base_estudiantes$est_p6_1, "La inteligencia es importante para obtener buenas notas")
+base_estudiantes$est_p6_2 <- sjlabelled::set_label(base_estudiantes$est_p6_2, "El esfuerzo es importante para obtener buenas notas")
+base_estudiantes$est_p7 <- sjlabelled::set_label(base_estudiantes$est_p7, "Qué consideras más importante para poder obtener buenos resultados en la escuela")
+base_estudiantes$est_p8 <- sjlabelled::set_label(base_estudiantes$est_p8, "Algunas personas creen que el nivel de esfuerzo puede cambiar en el tiempo y otros dicen que eso no es posible")
+base_estudiantes$est_p9 <- sjlabelled::set_label(base_estudiantes$est_p9, "Tomando en cuenta el esfuerzo que diariamente le dedicas a las diferentes actividades académicas en la escuela, crees que")
+base_estudiantes$est_p10 <- sjlabelled::set_label(base_estudiantes$est_p10, "Pensando en el esfuerzo que la mayoría de tus compañeros le dedica al trabajo académico, crees que")
+base_estudiantes$est_p11 <- sjlabelled::set_label(base_estudiantes$est_p11, "Algunas personas creen que la habilidad de una persona es algo que no puede cambiar, otras consideran que sí es posible")
+base_estudiantes$est_p12 <- sjlabelled::set_label(base_estudiantes$est_p12, "Teniendo como referencia las habilidades de tus compañeros de curso, cres que")
+base_estudiantes$est_p13 <- sjlabelled::set_label(base_estudiantes$est_p13, "Y observando a tus compañeros, ¿Cómo los consideras en términos de sus habilidades naturales?")
+
+base_estudiantes$est_p38_1 <- sjlabelled::set_label(base_estudiantes$est_p38_1, "En Chile, las personas tienen igualdad de oportunidades para salir adelante")
+base_estudiantes$est_p38_2 <- sjlabelled::set_label(base_estudiantes$est_p38_2, "En Chile, las personas son recompensadas por sus esfuerzos")
+base_estudiantes$est_p38_3 <- sjlabelled::set_label(base_estudiantes$est_p38_3, "En Chile, las personas obtienen lo que merecen")
+base_estudiantes$est_p38_4 <- sjlabelled::set_label(base_estudiantes$est_p38_4, "En Chile, las personas son recompensadas por su inteligencia y habilidad")
+base_estudiantes$est_p38_5 <- sjlabelled::set_label(base_estudiantes$est_p38_5, "En Chile, las diferencias de ingreso son demasiado grandes")
+base_estudiantes$est_p39_1 <- sjlabelled::set_label(base_estudiantes$est_p39_1, "Es justo que en Chile las personas con mayores ingresos puedan tener mejores pensiones que las personas de ingresos más bajos")
+base_estudiantes$est_p39_2 <- sjlabelled::set_label(base_estudiantes$est_p39_2, "Es justo que en Chile las personas que puedan pagar tengan una mejor educación para sus hijos")
+base_estudiantes$est_p39_3 <- sjlabelled::set_label(base_estudiantes$est_p39_3, "Es justo que en Chile las personas con mayores ingresos puedan acceder a una mejor atención de salud que las personas con ingresos más bajos")
+base_estudiantes$est_p39_4 <- sjlabelled::set_label(base_estudiantes$est_p39_4, "El Gobierno de Chile debería hacer algo para reducir las diferencias de ingreso entre ricos y pobres")
+```
+
+
 
 ```{r}
 save(base_estudiantes, file="output/base_estudiantes.RData")
